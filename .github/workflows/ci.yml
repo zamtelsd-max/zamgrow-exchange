@@ -1,0 +1,221 @@
+name: 🌾 Zamgrow Exchange CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================================
+  # Frontend: Lint + Build
+  # ============================================================
+  frontend:
+    name: 🎨 Frontend (React + TypeScript)
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:3001
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ============================================================
+  # Backend: Lint + Type Check
+  # ============================================================
+  backend:
+    name: 🔧 Backend (Node.js + TypeScript)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: zamgrow
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: zamgrow_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://zamgrow:test_password@localhost:5432/zamgrow_test
+
+      - name: TypeScript compilation
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://zamgrow:test_password@localhost:5432/zamgrow_test
+
+      - name: Health check
+        run: |
+          DATABASE_URL="postgresql://zamgrow:test_password@localhost:5432/zamgrow_test" \
+          REDIS_URL="redis://localhost:6379" \
+          JWT_SECRET="test-secret" \
+          JWT_REFRESH_SECRET="test-refresh-secret" \
+          PORT=3001 \
+          node dist/app.js &
+          sleep 5
+          curl -f http://localhost:3001/health || exit 1
+
+  # ============================================================
+  # Pricing Engine: Python Tests
+  # ============================================================
+  pricing-engine:
+    name: 🤖 Pricing Engine (Python FastAPI)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: pricing-engine
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: pricing-engine/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start FastAPI and health check
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1
+          curl -f "http://localhost:8000/pricing/suggest?product_id=maize&province_id=3" || exit 1
+
+  # ============================================================
+  # Docker Build Check
+  # ============================================================
+  docker-build:
+    name: 🐳 Docker Build
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, pricing-engine]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: zamgrow-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: zamgrow-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Pricing Engine Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./pricing-engine
+          push: false
+          tags: zamgrow-pricing:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # Security Scan
+  # ============================================================
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: [backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit (backend)
+        run: npm audit --audit-level=high
+        working-directory: backend
+        continue-on-error: true
+
+      - name: Run npm audit (frontend)
+        run: npm audit --audit-level=high
+        working-directory: frontend
+        continue-on-error: true

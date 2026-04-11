@@ -1,0 +1,118 @@
+version: '3.9'
+
+# Zamgrow Exchange - Full Stack Development Environment
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: zamgrow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zamgrow
+      POSTGRES_PASSWORD: zamgrow_password
+      POSTGRES_DB: zamgrow_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zamgrow -d zamgrow_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: zamgrow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (Node.js + Express + TypeScript)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zamgrow-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://zamgrow:zamgrow_password@postgres:5432/zamgrow_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: zamgrow-dev-secret-key-change-in-production
+      JWT_REFRESH_SECRET: zamgrow-dev-refresh-key-change-in-production
+      FRONTEND_URL: http://localhost:3000
+      PRICING_ENGINE_URL: http://pricing:8000
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Pricing Engine (Python FastAPI + XGBoost)
+  pricing:
+    build:
+      context: ./pricing-engine
+      dockerfile: Dockerfile
+    container_name: zamgrow-pricing
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://zamgrow:zamgrow_password@postgres:5432/zamgrow_db
+      PORT: 8000
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (React PWA)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zamgrow-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: zamgrow-network

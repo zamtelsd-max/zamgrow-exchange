@@ -1,0 +1,407 @@
+// Zamgrow Exchange - Complete Prisma Schema
+// PostgreSQL 15+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum UserRole {
+  BUYER
+  SELLER
+  BOTH
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ListingType {
+  BUY
+  SELL
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+  PENDING
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  FREE
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  AIRTEL
+  MTN
+  ZAMTEL
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  OFFER
+  MESSAGE
+  PRICE_ALERT
+  SUBSCRIPTION
+  LISTING_EXPIRY
+  REVIEW
+  SYSTEM
+}
+
+enum PriceSource {
+  LISTING
+  TRANSACTION
+  MANUAL
+}
+
+enum AlertDirection {
+  ABOVE
+  BELOW
+}
+
+// ============================================================
+// Models
+// ============================================================
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  phone           String    @unique
+  email           String?   @unique
+  passwordHash    String?
+  role            UserRole  @default(SELLER)
+  provinceId      Int?
+  districtId      Int?
+  creditsBalance  Int       @default(10)
+  isVerified      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  isBanned        Boolean   @default(false)
+  kycDocUrl       String?
+  kycStatus       String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  profilePhotoUrl String?
+  fcmToken        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  province        Province?      @relation(fields: [provinceId], references: [id])
+  district        District?      @relation(fields: [districtId], references: [id])
+  listings        Listing[]
+  offersInitiated Offer[]        @relation("OfferInitiator")
+  offersReceived  Offer[]        @relation("OfferReceiver")
+  reviewsGiven    Review[]       @relation("Reviewer")
+  reviewsReceived Review[]       @relation("Reviewee")
+  subscription    Subscription?
+  payments        Payment[]
+  notifications   Notification[]
+  watchlist       Watchlist[]
+  creditsLog      CreditsLog[]
+  priceAlerts     PriceAlert[]
+  transactions    Transaction[]
+
+  @@map("users")
+}
+
+model Province {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  capital  String
+  agrozone String
+  users    User[]
+  districts District[]
+  listings  Listing[]
+  priceHistory PriceHistory[]
+  priceAlerts PriceAlert[]
+
+  @@map("provinces")
+}
+
+model District {
+  id         Int      @id @default(autoincrement())
+  name       String
+  provinceId Int
+  latitude   Float?
+  longitude  Float?
+  province   Province @relation(fields: [provinceId], references: [id])
+  users      User[]
+  listings   Listing[]
+
+  @@unique([name, provinceId])
+  @@map("districts")
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  emoji    String
+  parentId Int?
+  parent   Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           Int       @id @default(autoincrement())
+  name         String
+  categoryId   Int
+  unitsOptions Json      // Array of unit options
+  imageUrl     String?
+  category     Category  @relation(fields: [categoryId], references: [id])
+  listings     Listing[]
+  priceHistory PriceHistory[]
+  priceAlerts  PriceAlert[]
+
+  @@unique([name, categoryId])
+  @@map("products")
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  userId      String
+  type        ListingType
+  productId   Int
+  productName String        // Denormalized for fast search
+  categoryId  Int?
+  quantity    Float
+  unit        String
+  priceZmw    Float
+  provinceId  Int
+  districtId  Int?
+  description String?       @db.Text
+  status      ListingStatus @default(ACTIVE)
+  expiresAt   DateTime
+  dateAvailable DateTime?
+  deadline    DateTime?
+  viewsCount  Int           @default(0)
+  offersCount Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id])
+  product     Product       @relation(fields: [productId], references: [id])
+  province    Province      @relation(fields: [provinceId], references: [id])
+  district    District?     @relation(fields: [districtId], references: [id])
+  photos      ListingPhoto[]
+  offers      Offer[]
+  watchlisted Watchlist[]
+
+  @@index([status, type])
+  @@index([provinceId, status])
+  @@index([productId, provinceId])
+  @@map("listings")
+}
+
+model ListingPhoto {
+  id          String  @id @default(cuid())
+  listingId   String
+  url         String
+  cloudinaryId String?
+  sortOrder   Int     @default(0)
+  listing     Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_photos")
+}
+
+model Offer {
+  id           String      @id @default(cuid())
+  listingId    String
+  initiatorId  String
+  receiverId   String
+  offeredPrice Float
+  counterPrice Float?
+  quantity     Float?
+  message      String?     @db.Text
+  status       OfferStatus @default(PENDING)
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  listing     Listing      @relation(fields: [listingId], references: [id])
+  initiator   User         @relation("OfferInitiator", fields: [initiatorId], references: [id])
+  receiver    User         @relation("OfferReceiver", fields: [receiverId], references: [id])
+  transaction Transaction?
+
+  @@map("offers")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  offerId       String            @unique
+  userId        String
+  finalPrice    Float
+  status        TransactionStatus @default(PENDING)
+  paymentMethod PaymentMethod?
+  paymentRef    String?
+  completedAt   DateTime?
+  createdAt     DateTime          @default(now())
+
+  offer    Offer    @relation(fields: [offerId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  reviews  Review[]
+
+  @@map("transactions")
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  userId    String             @unique
+  plan      SubscriptionPlan   @default(FREE)
+  startDate DateTime           @default(now())
+  endDate   DateTime
+  status    SubscriptionStatus @default(ACTIVE)
+  paymentId String?
+
+  user    User     @relation(fields: [userId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  amountZmw   Float
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  externalRef String?
+  webhookData Json?
+  createdAt   DateTime      @default(now())
+
+  user         User          @relation(fields: [userId], references: [id])
+  subscription Subscription?
+
+  @@map("payments")
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  reviewerId    String
+  revieweeId    String
+  transactionId String
+  rating        Int      // 1-5
+  comment       String?  @db.VarChar(500)
+  isFlagged     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  reviewer    User        @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee    User        @relation("Reviewee", fields: [revieweeId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+
+  @@unique([reviewerId, transactionId])
+  @@map("reviews")
+}
+
+model PriceHistory {
+  id         Int         @id @default(autoincrement())
+  productId  Int
+  provinceId Int
+  districtId Int?
+  priceZmw   Float
+  source     PriceSource @default(LISTING)
+  recordedAt DateTime    @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id])
+  province Province @relation(fields: [provinceId], references: [id])
+
+  @@index([productId, provinceId])
+  @@index([recordedAt])
+  @@map("price_history")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model PriceAlert {
+  id             String         @id @default(cuid())
+  userId         String
+  productId      Int
+  provinceId     Int
+  thresholdPrice Float
+  direction      AlertDirection
+  isActive       Boolean        @default(true)
+  lastTriggered  DateTime?
+  createdAt      DateTime       @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  province Province @relation(fields: [provinceId], references: [id])
+
+  @@map("price_alerts")
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  savedAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@map("watchlist")
+}
+
+model CreditsLog {
+  id           String   @id @default(cuid())
+  userId       String
+  action       String
+  creditsChange Int
+  balanceAfter Int
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("credits_log")
+}

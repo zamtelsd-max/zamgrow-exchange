@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Phone, Mail, MapPin, Facebook, Twitter, Instagram } from 'lucide-react'
+import { Phone, Mail, MapPin } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -21,9 +21,9 @@ export default function Footer() {
               Zambia's #1 intelligent agricultural marketplace. Connecting farmers to markets with AI-powered pricing intelligence.
             </p>
             <div className="flex gap-3">
-              {[Facebook, Twitter, Instagram].map((Icon, i) => (
-                <a key={i} href="#" className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:bg-primary-600 hover:text-white transition-colors">
-                  <Icon className="w-4 h-4" />
+              {['FB','TW','IG'].map((s, i) => (
+                <a key={i} href="#" className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:bg-primary-600 hover:text-white transition-colors text-xs font-bold">
+                  {s}
                 </a>
               ))}
             </div>

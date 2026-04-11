@@ -1,24 +1,24 @@
-import { Response } from 'express'
+import crypto from 'crypto'
 
-export const sendSuccess = <T>(res: Response, data: T, message?: string, statusCode = 200, meta?: object) => {
-  res.status(statusCode).json({ success: true, data, message, meta })
-}
-
-export const sendError = (res: Response, message: string, statusCode = 400) => {
-  res.status(statusCode).json({ success: false, message })
-}
-
-export const generateOtp = (): string => {
+export function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-export const formatZMW = (amount: number): string => {
-  return `K ${amount.toLocaleString('en-ZM', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+export function generateReference(): string {
+  return 'ZMG' + Date.now() + crypto.randomBytes(4).toString('hex').toUpperCase()
 }
 
-export const getPaginationParams = (query: Record<string, string>) => {
-  const page = Math.max(1, parseInt(query.page || '1'))
-  const limit = Math.min(50, Math.max(1, parseInt(query.limit || '12')))
+export function formatZMW(amount: number): string {
+  return `K${amount.toLocaleString('en-ZM', { minimumFractionDigits: 2 })}`
+}
+
+export function paginate(page: number, limit: number) {
   const skip = (page - 1) * limit
-  return { page, limit, skip }
+  return { skip, take: limit }
+}
+
+export function calculateExpiryDate(days: number = 90): Date {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date
 }

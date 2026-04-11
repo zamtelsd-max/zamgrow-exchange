@@ -1,155 +1,93 @@
 import { Router, Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
-import Joi from 'joi'
-import { sendSuccess, sendError, generateOtp } from '../utils/helpers'
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt'
-import { logger } from '../utils/logger'
+import prisma from '../prisma'
+import { generateToken } from '../utils/jwt'
+import { generateOtp, calculateExpiryDate } from '../utils/helpers'
+import { sendOtpSms } from '../services/sms'
+import { authLimiter, otpLimiter } from '../middleware/rateLimit'
+import { z } from 'zod'
 
 const router = Router()
 
-// In-memory OTP store (replace with Redis in production)
-const otpStore = new Map<string, { otp: string; expiresAt: Date; userData?: object }>()
-
-/**
- * @swagger
- * /auth/otp/send:
- *   post:
- *     summary: Send OTP to phone number
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [phone]
- *             properties:
- *               phone:
- *                 type: string
- *                 example: "+260971234567"
- */
-router.post('/otp/send', async (req: Request, res: Response): Promise<void> => {
-  const { phone } = req.body
-  if (!phone) { sendError(res, 'Phone number required'); return }
-
-  const otp = generateOtp()
-  otpStore.set(phone, { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) })
-
-  logger.info(`OTP for ${phone}: ${otp}`) // In production, send via Africa's Talking SMS
-
-  sendSuccess(res, { phone, message: 'OTP sent successfully' }, 'OTP sent')
+const registerSchema = z.object({
+  name: z.string().min(2).max(100),
+  phone: z.string().regex(/^\+260\d{9}$/),
+  role: z.enum(['farmer', 'buyer', 'dealer']),
+  province: z.string().min(1),
+  district: z.string().optional(),
 })
 
-/**
- * @swagger
- * /auth/otp/verify:
- *   post:
- *     summary: Verify OTP code
- *     tags: [Auth]
- */
-router.post('/otp/verify', async (req: Request, res: Response): Promise<void> => {
-  const schema = Joi.object({
-    phone: Joi.string().required(),
-    otp: Joi.string().length(6).required(),
-  })
-
-  const { error, value } = schema.validate(req.body)
-  if (error) { sendError(res, error.details[0].message); return }
-
-  const stored = otpStore.get(value.phone)
-  if (!stored || stored.otp !== value.otp || new Date() > stored.expiresAt) {
-    sendError(res, 'Invalid or expired OTP', 400)
-    return
-  }
-
-  otpStore.delete(value.phone)
-  sendSuccess(res, { verified: true, phone: value.phone }, 'OTP verified successfully')
-})
-
-/**
- * @swagger
- * /auth/register:
- *   post:
- *     summary: Register new user
- *     tags: [Auth]
- */
-router.post('/register', async (req: Request, res: Response): Promise<void> => {
-  const schema = Joi.object({
-    name: Joi.string().min(2).max(100).required(),
-    phone: Joi.string().pattern(/^\+260[0-9]{9}$/).required(),
-    role: Joi.string().valid('BUYER', 'SELLER', 'BOTH').default('SELLER'),
-    provinceId: Joi.number().optional(),
-    districtId: Joi.number().optional(),
-    password: Joi.string().min(8).optional(),
-  })
-
-  const { error, value } = schema.validate(req.body)
-  if (error) { sendError(res, error.details[0].message); return }
-
-  // Mock registration (implement with Prisma in production)
-  const mockUser = {
-    id: `user-${Date.now()}`,
-    ...value,
-    creditsBalance: 10,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  }
-
-  const accessToken = generateAccessToken({ userId: mockUser.id, role: value.role, phone: value.phone })
-  const refreshToken = generateRefreshToken({ userId: mockUser.id, role: value.role, phone: value.phone })
-
-  sendSuccess(res, {
-    user: mockUser,
-    accessToken,
-    refreshToken,
-  }, 'Account created successfully. 10 free credits added!', 201)
-})
-
-/**
- * @swagger
- * /auth/login:
- *   post:
- *     summary: Login with phone + OTP or password
- *     tags: [Auth]
- */
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
-  const { phone, password, otp } = req.body
-  if (!phone) { sendError(res, 'Phone number required'); return }
-
-  // Mock login
-  const mockUser = {
-    id: 'demo-user',
-    name: 'John Nkhoma',
-    phone,
-    role: 'SELLER',
-    creditsBalance: 10,
-    isVerified: true,
-  }
-
-  const accessToken = generateAccessToken({ userId: mockUser.id, role: mockUser.role, phone })
-  const refreshToken = generateRefreshToken({ userId: mockUser.id, role: mockUser.role, phone })
-
-  sendSuccess(res, { user: mockUser, accessToken, refreshToken }, 'Login successful')
-})
-
-/**
- * @swagger
- * /auth/refresh:
- *   post:
- *     summary: Refresh access token
- *     tags: [Auth]
- */
-router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
-  const { refreshToken } = req.body
-  if (!refreshToken) { sendError(res, 'Refresh token required', 401); return }
-
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
-    const { verifyRefreshToken, generateAccessToken: genAccess } = await import('../utils/jwt')
-    const payload = verifyRefreshToken(refreshToken)
-    const newAccessToken = genAccess(payload)
-    sendSuccess(res, { accessToken: newAccessToken })
+    const data = registerSchema.parse(req.body)
+    const existing = await prisma.user.findUnique({ where: { phone: data.phone } })
+    if (existing) return res.status(409).json({ error: 'Phone number already registered' })
+    const user = await prisma.user.create({
+      data: {
+        ...data,
+        credits: 10,
+        creditsLog: {
+          create: { amount: 10, type: 'bonus', description: 'Welcome bonus credits' }
+        }
+      }
+    })
+    const token = generateToken({ userId: user.id, role: user.role })
+    res.status(201).json({ user: { ...user, passwordHash: undefined }, token })
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: 'Invalid data', details: err.errors })
+    res.status(500).json({ error: 'Registration failed' })
+  }
+})
+
+router.post('/otp/send', otpLimiter, async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.body
+    if (!phone) return res.status(400).json({ error: 'Phone required' })
+    const otp = generateOtp()
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    const user = await prisma.user.findUnique({ where: { phone } })
+    await prisma.otpCode.create({
+      data: { phone, code: otp, expiresAt, userId: user?.id }
+    })
+    await sendOtpSms(phone, otp)
+    res.json({ success: true, message: `OTP sent to ${phone}` })
   } catch {
-    sendError(res, 'Invalid refresh token', 401)
+    res.status(500).json({ error: 'Failed to send OTP' })
+  }
+})
+
+router.post('/otp/verify', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const { phone, otp } = req.body
+    const otpRecord = await prisma.otpCode.findFirst({
+      where: { phone, code: otp, used: false, expiresAt: { gte: new Date() } },
+      orderBy: { createdAt: 'desc' }
+    })
+    if (!otpRecord) return res.status(400).json({ error: 'Invalid or expired OTP' })
+    await prisma.otpCode.update({ where: { id: otpRecord.id }, data: { used: true } })
+    const user = await prisma.user.findUnique({ where: { phone } })
+    if (!user) return res.status(404).json({ error: 'User not found. Please register first.' })
+    const token = generateToken({ userId: user.id, role: user.role })
+    res.json({ user: { ...user, passwordHash: undefined }, token })
+  } catch {
+    res.status(500).json({ error: 'OTP verification failed' })
+  }
+})
+
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const { phone, password } = req.body
+    const user = await prisma.user.findUnique({ where: { phone } })
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+    if (user.banned) return res.status(403).json({ error: 'Account suspended' })
+    if (password && user.passwordHash) {
+      const valid = await bcrypt.compare(password, user.passwordHash)
+      if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
+    }
+    const token = generateToken({ userId: user.id, role: user.role })
+    res.json({ user: { ...user, passwordHash: undefined }, token })
+  } catch {
+    res.status(500).json({ error: 'Login failed' })
   }
 })
 

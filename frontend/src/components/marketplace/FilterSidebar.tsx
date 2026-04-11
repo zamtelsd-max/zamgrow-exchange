@@ -121,7 +121,7 @@ export default function FilterSidebar() {
                 className="select-field text-sm py-2 mt-2"
               >
                 <option value="">All Districts</option>
-                {selectedProvince.districts.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                {selectedProvince.districts.map((d: any) => <option key={d.id || d} value={d.name || d}>{d.name || d}</option>)}
               </select>
             )}
           </div>

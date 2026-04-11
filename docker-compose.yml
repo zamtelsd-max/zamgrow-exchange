@@ -1,24 +1,21 @@
 version: '3.9'
 
-# Zamgrow Exchange - Full Stack Development Environment
-
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: zamgrow-db
+    container_name: zamgrow-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: zamgrow
-      POSTGRES_PASSWORD: zamgrow_password
       POSTGRES_DB: zamgrow_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: zamgrow_secret_2024
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zamgrow -d zamgrow_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,83 +25,78 @@ services:
     image: redis:7-alpine
     container_name: zamgrow-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Backend API (Node.js + Express + TypeScript)
+  # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: zamgrow-api
+    container_name: zamgrow-backend
     restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:zamgrow_secret_2024@postgres:5432/zamgrow_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: zamgrow-jwt-secret-change-in-production
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      NODE_ENV: production
+      PRICING_ENGINE_URL: http://pricing:8000
+      CORS_ORIGINS: http://localhost:3000,http://frontend:3000
     ports:
       - "3001:3001"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://zamgrow:zamgrow_password@postgres:5432/zamgrow_db
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: zamgrow-dev-secret-key-change-in-production
-      JWT_REFRESH_SECRET: zamgrow-dev-refresh-key-change-in-production
-      FRONTEND_URL: http://localhost:3000
-      PRICING_ENGINE_URL: http://pricing:8000
-      PORT: 3001
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend/src:/app/src:ro
-      - ./backend/logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Pricing Engine (Python FastAPI + XGBoost)
+  # Python Pricing Engine
   pricing:
     build:
       context: ./pricing-engine
       dockerfile: Dockerfile
     container_name: zamgrow-pricing
     restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:zamgrow_secret_2024@postgres:5432/zamgrow_db
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://zamgrow:zamgrow_password@postgres:5432/zamgrow_db
-      PORT: 8000
-    depends_on:
-      - postgres
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Frontend (React PWA)
+  # Frontend React PWA
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: zamgrow-frontend
     restart: unless-stopped
-    ports:
-      - "3000:80"
     environment:
       VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:80"
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3

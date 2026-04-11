@@ -47,11 +47,10 @@ export default function AdminPage() {
     { icon: TrendingUp, label: 'Total Transactions', value: MOCK_ADMIN_STATS.totalTransactions.toLocaleString(), change: 'All time', color: 'text-purple-600 bg-purple-50' },
   ]
 
-  const TABS = ['overview', 'users', 'listings', 'reports']
+  const TABS = ['overview', 'users', 'listings', 'reports'] as const
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -66,7 +65,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* KYC Alert */}
       {MOCK_ADMIN_STATS.pendingKyc > 0 && (
         <div className="card p-4 bg-amber-50 border-amber-200 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -77,12 +75,11 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
         {TABS.map(tab => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as typeof activeTab)}
+            onClick={() => setActiveTab(tab)}
             className={clsx(
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize',
               activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
@@ -93,10 +90,8 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Overview Tab */}
       {activeTab === 'overview' && (
         <>
-          {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {stats.map(s => (
               <div key={s.label} className="stat-card">
@@ -110,7 +105,6 @@ export default function AdminPage() {
             ))}
           </div>
 
-          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="card p-6 lg:col-span-2">
               <h3 className="font-semibold text-gray-900 mb-4">Revenue Trend (ZMW)</h3>
@@ -118,7 +112,7 @@ export default function AdminPage() {
                 <BarChart data={MONTHLY_REVENUE}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `K${(v/1000).toFixed(0)}k`} />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `K${(v/1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: number) => [`K ${v.toLocaleString()}`, 'Revenue']} />
                   <Bar dataKey="revenue" fill="#16a34a" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -149,7 +143,6 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* Users Tab */}
       {activeTab === 'users' && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
@@ -166,32 +159,29 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {MOCK_USERS.filter(u => u.role !== 'ADMIN').map(user => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                {MOCK_USERS.filter(u => u.role !== 'ADMIN').map(u => (
+                  <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                          <span className="text-primary-700 text-sm font-semibold">{user.name[0]}</span>
+                          <span className="text-primary-700 text-sm font-semibold">{u.name[0]}</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                        <span className="text-sm font-medium text-gray-900">{u.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.phone}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{u.phone}</td>
+                    <td className="px-4 py-3"><span className="badge-active text-xs">{u.role}</span></td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{u.province?.name || 'N/A'}</td>
                     <td className="px-4 py-3">
-                      <span className="badge-active text-xs">{user.role}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.province?.name || 'N/A'}</td>
-                    <td className="px-4 py-3">
-                      {user.isVerified
+                      {u.isVerified
                         ? <div className="flex items-center gap-1 text-green-600 text-xs"><CheckCircle className="w-3.5 h-3.5" /> Verified</div>
                         : <div className="flex items-center gap-1 text-amber-600 text-xs"><AlertCircle className="w-3.5 h-3.5" /> Pending</div>
                       }
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.creditsBalance}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{u.creditsBalance}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
                         <button className="p-1.5 text-gray-400 hover:text-primary-600 rounded"><Eye className="w-4 h-4" /></button>
-                        {!user.isVerified && <button className="p-1.5 text-gray-400 hover:text-green-600 rounded"><CheckCircle className="w-4 h-4" /></button>}
                         <button className="p-1.5 text-gray-400 hover:text-red-600 rounded"><Ban className="w-4 h-4" /></button>
                       </div>
                     </td>
@@ -203,12 +193,10 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Listings Tab */}
       {activeTab === 'listings' && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Listing Moderation</h3>
-            <input type="search" placeholder="Search listings..." className="input-field text-sm py-2 w-48" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -250,7 +238,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[

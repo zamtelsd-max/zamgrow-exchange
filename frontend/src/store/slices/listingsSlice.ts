@@ -1,106 +1,70 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-export interface Listing {
-  id: string
-  title: string
-  description: string
-  type: 'sell' | 'buy'
-  price: number
-  unit: string
-  quantity: number
-  category: string
-  product: string
-  province: string
-  district: string
-  photos: string[]
-  sellerId: string
-  sellerName: string
-  sellerRating: number
-  sellerPhone: string
-  verified: boolean
-  status: 'active' | 'sold' | 'expired' | 'pending'
-  views: number
-  offers: number
-  createdAt: string
-  expiresAt: string
-  isFeatured: boolean
-}
-
-export interface ListingFilters {
-  category: string
-  province: string
-  district: string
-  type: string
-  minPrice: number
-  maxPrice: number
-  search: string
-  sortBy: string
-}
+import { Listing, SearchFilters } from '../../types'
+import { MOCK_LISTINGS } from '../../services/mockData'
 
 interface ListingsState {
   listings: Listing[]
   currentListing: Listing | null
-  filters: ListingFilters
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-  loading: boolean
-  error: string | null
-}
-
-const initialFilters: ListingFilters = {
-  category: '',
-  province: '',
-  district: '',
-  type: '',
-  minPrice: 0,
-  maxPrice: 0,
-  search: '',
-  sortBy: 'newest',
+  savedListings: string[]
+  filters: SearchFilters
+  isLoading: boolean
+  total: number
+  page: number
 }
 
 const initialState: ListingsState = {
-  listings: [],
+  listings: MOCK_LISTINGS,
   currentListing: null,
-  filters: initialFilters,
-  pagination: { page: 1, limit: 12, total: 0, totalPages: 0 },
-  loading: false,
-  error: null,
+  savedListings: ['l2', 'l5', 'l10'],
+  filters: { sortBy: 'date_desc', limit: 12, page: 1 },
+  isLoading: false,
+  total: MOCK_LISTINGS.length,
+  page: 1,
 }
 
 const listingsSlice = createSlice({
   name: 'listings',
   initialState,
   reducers: {
-    setListings: (state, action: PayloadAction<{ listings: Listing[]; total: number; totalPages: number }>) => {
-      state.listings = action.payload.listings
-      state.pagination.total = action.payload.total
-      state.pagination.totalPages = action.payload.totalPages
+    setListings(state, action: PayloadAction<Listing[]>) {
+      state.listings = action.payload
+      state.total = action.payload.length
     },
-    setCurrentListing: (state, action: PayloadAction<Listing | null>) => {
+    setCurrentListing(state, action: PayloadAction<Listing | null>) {
       state.currentListing = action.payload
     },
-    setFilters: (state, action: PayloadAction<Partial<ListingFilters>>) => {
+    setFilters(state, action: PayloadAction<Partial<SearchFilters>>) {
       state.filters = { ...state.filters, ...action.payload }
-      state.pagination.page = 1
     },
-    setPage: (state, action: PayloadAction<number>) => {
-      state.pagination.page = action.payload
+    toggleSaved(state, action: PayloadAction<string>) {
+      const id = action.payload
+      const idx = state.savedListings.indexOf(id)
+      if (idx >= 0) {
+        state.savedListings.splice(idx, 1)
+      } else {
+        state.savedListings.push(id)
+      }
+      const listing = state.listings.find(l => l.id === id)
+      if (listing) listing.isSaved = !listing.isSaved
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload
+    setLoading(state, action: PayloadAction<boolean>) {
+      state.isLoading = action.payload
     },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
+    addListing(state, action: PayloadAction<Listing>) {
+      state.listings.unshift(action.payload)
+      state.total += 1
     },
-    resetFilters: (state) => {
-      state.filters = initialFilters
+    updateListing(state, action: PayloadAction<Partial<Listing> & { id: string }>) {
+      const idx = state.listings.findIndex(l => l.id === action.payload.id)
+      if (idx >= 0) {
+        state.listings[idx] = { ...state.listings[idx], ...action.payload }
+      }
     },
   },
 })
 
-export const { setListings, setCurrentListing, setFilters, setPage, setLoading, setError, resetFilters } = listingsSlice.actions
+export const {
+  setListings, setCurrentListing, setFilters,
+  toggleSaved, setLoading, addListing, updateListing,
+} = listingsSlice.actions
 export default listingsSlice.reducer

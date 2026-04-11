@@ -1,14 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-export interface Notification {
-  id: string
-  type: 'offer' | 'message' | 'price_alert' | 'system' | 'payment'
-  title: string
-  message: string
-  read: boolean
-  createdAt: string
-  linkTo?: string
-}
+import type { Notification } from '../../types'
+import { MOCK_NOTIFICATIONS } from '../../services/mockData'
 
 interface NotificationsState {
   notifications: Notification[]
@@ -16,35 +8,35 @@ interface NotificationsState {
 }
 
 const initialState: NotificationsState = {
-  notifications: [],
-  unreadCount: 0,
+  notifications: MOCK_NOTIFICATIONS,
+  unreadCount: MOCK_NOTIFICATIONS.filter(n => !n.isRead).length,
 }
 
 const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    setNotifications: (state, action: PayloadAction<Notification[]>) => {
+    setNotifications(state, action: PayloadAction<Notification[]>) {
       state.notifications = action.payload
-      state.unreadCount = action.payload.filter(n => !n.read).length
+      state.unreadCount = action.payload.filter(n => !n.isRead).length
     },
-    addNotification: (state, action: PayloadAction<Notification>) => {
+    addNotification(state, action: PayloadAction<Notification>) {
       state.notifications.unshift(action.payload)
-      if (!action.payload.read) state.unreadCount++
+      if (!action.payload.isRead) state.unreadCount++
     },
-    markAsRead: (state, action: PayloadAction<string>) => {
+    markAsRead(state, action: PayloadAction<string>) {
       const notif = state.notifications.find(n => n.id === action.payload)
-      if (notif && !notif.read) {
-        notif.read = true
+      if (notif && !notif.isRead) {
+        notif.isRead = true
         state.unreadCount = Math.max(0, state.unreadCount - 1)
       }
     },
-    markAllRead: (state) => {
-      state.notifications.forEach(n => { n.read = true })
+    markAllAsRead(state) {
+      state.notifications.forEach(n => { n.isRead = true })
       state.unreadCount = 0
     },
   },
 })
 
-export const { setNotifications, addNotification, markAsRead, markAllRead } = notificationsSlice.actions
+export const { setNotifications, addNotification, markAsRead, markAllAsRead } = notificationsSlice.actions
 export default notificationsSlice.reducer

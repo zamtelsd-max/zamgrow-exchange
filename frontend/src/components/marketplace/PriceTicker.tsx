@@ -5,7 +5,6 @@ import clsx from 'clsx'
 
 export default function PriceTicker() {
   const { priceData } = useSelector((s: RootState) => s.market)
-
   const tickers = priceData.slice(0, 8)
 
   return (
@@ -22,13 +21,11 @@ export default function PriceTicker() {
                 <span className="text-gray-400 text-xs">({p.province})</span>
                 <span className="font-bold text-white">K {p.avgPrice.toFixed(0)}</span>
                 <span className="text-gray-400 text-xs">{p.unit}</span>
-                {p.trend === 'UP' && <TrendingUp className={clsx('w-3.5 h-3.5', 'text-green-400')} />}
-                {p.trend === 'DOWN' && <TrendingDown className={clsx('w-3.5 h-3.5', 'text-red-400')} />}
-                {p.trend === 'STABLE' && <Minus className={clsx('w-3.5 h-3.5', 'text-gray-400')} />}
-                <span className={clsx(
-                  'text-xs font-medium',
-                  p.trend === 'UP' ? 'text-green-400' : p.trend === 'DOWN' ? 'text-red-400' : 'text-gray-400'
-                )}>
+                {p.trend === 'UP' && <TrendingUp className="w-3.5 h-3.5 text-green-400" />}
+                {p.trend === 'DOWN' && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                {p.trend === 'STABLE' && <Minus className="w-3.5 h-3.5 text-gray-400" />}
+                <span className={clsx('text-xs font-medium',
+                  p.trend === 'UP' ? 'text-green-400' : p.trend === 'DOWN' ? 'text-red-400' : 'text-gray-400')}>
                   {p.trend === 'UP' ? '+' : ''}{p.changePercent.toFixed(1)}%
                 </span>
                 <span className="text-gray-700 mx-2">|</span>

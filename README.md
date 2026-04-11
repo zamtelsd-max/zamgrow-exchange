@@ -1,430 +1,211 @@
+<div align="center">
+
 # 🌾 Zamgrow Exchange
 
-> **Zambia's #1 Intelligent Agricultural Marketplace**  
-> Connect. Trade. Grow.
+### Zambia's #1 Intelligent Agricultural Marketplace
 
-[![CI/CD](https://github.com/zamgrow/zamgrow-exchange/actions/workflows/ci.yml/badge.svg)](https://github.com/zamgrow/zamgrow-exchange/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.x-61DAFB)](https://react.dev/)
+**Connect. Trade. Grow.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://docker.com/)
+
+</div>
 
 ---
 
-## 🚀 Overview
+## 📋 Overview
 
-**Zamgrow Exchange** is a full-stack agricultural marketplace platform built specifically for Zambia. It connects farmers directly to buyers across all 10 provinces, eliminating middlemen and providing AI-powered pricing intelligence powered by XGBoost machine learning.
+Zamgrow Exchange is a full-stack agricultural marketplace built specifically for Zambia, connecting **12,000+ farmers**, buyers, and agro-dealers across all 10 provinces. The platform features AI-powered price intelligence, mobile money integration, and real-time market data.
 
-### The Problem We Solve
+## ✨ Features
 
-| Problem | Our Solution |
-|---------|-------------|
-| Fragmented supply chain | Unified national marketplace |
-| Price information asymmetry | AI price suggestions + market heatmaps |
-| Middlemen taking 30-40% margins | Direct buyer-seller connection |
-| No Zambia-specific platform | Province/district data, ZMW currency, CAT timezone |
-| Limited digital payment options | Airtel Money, MTN MoMo, Zamtel Money native |
-
----
-
-## ✨ Key Features
-
-### 🛒 Dual-Sided Marketplace
-- **Sellers** post crop/livestock inventory with asking prices
-- **Buyers** post procurement requests for suppliers to respond to
-- First platform in Zambia to support both listing types
-
-### 🤖 AI-Powered Pricing Engine
-- Real-time price suggestions based on province, season, supply/demand
-- XGBoost regression model trained on historical transactions
-- Province price heatmap for all 10 provinces
-- Configurable price alerts (notify when Maize in Eastern drops below K300)
-
-### 📍 Hyper-Localized for Zambia
-- All 10 provinces + 50+ districts
-- Agroecological zones (I, IIa, IIb, III)
-- GPS-based proximity search
-- ZMW currency, CAT timezone, DD/MM/YYYY dates
-
-### 💳 Mobile Money Native
-- **Airtel Money** (48% market share) via `*778#`
-- **MTN MoMo** (35% market share) via `*303#`
-- **Zamtel Money** (17% market share) via `*115#`
-- Visa/Mastercard via Paystack/Flutterwave
-
-### 🔔 Real-Time Intelligence
-- WebSocket live price updates (Socket.io)
-- Push notifications (Firebase Cloud Messaging)
-- SMS fallback for offline users (Africa's Talking)
-- Weekly email market digests
-
-### 💎 Credit & Subscription System
-- 10 free credits on registration
-- Monthly: **K20/month** — unlimited listings + offers
-- Annual: **K300/year** — unlimited everything + data export
-- Zero-credit state: can browse but can't initiate
-
----
-
-## 📸 Screenshots
-
-### Landing Page
-Beautiful hero section with animated price ticker, province statistics, and clear CTAs.
-
-### Browse Marketplace  
-Filterable listing grid with real-time search, province/category filters, and dual list/grid views.
-
-### Listing Detail
-Full photo gallery, seller profile with ratings, AI price comparison widget, offer submission form.
-
-### Market Intelligence
-Province heatmap with color intensity, price trend charts (6-month history), configurable alerts.
-
-### Dashboard
-Stats widgets, listing management, offer inbox with accept/reject/counter actions, notifications.
-
-### Admin Panel
-KPI metrics, revenue charts, user management table with KYC verification workflow.
-
----
+- 🤖 **AI Price Intelligence** — ML-powered price suggestions with confidence scores
+- 📱 **Mobile Money Integration** — MTN, Airtel, and Zamtel payment support
+- 🗺️ **Province Heatmap** — Interactive price visualization across Zambia's 10 provinces
+- 💬 **Offer Negotiation** — Real-time chat-style offer/counter-offer system
+- 🔔 **Price Alerts** — SMS notifications when target prices are reached
+- 🛡️ **Verified Traders** — NRC and business registration verification
+- 📊 **Market Dashboard** — 6-month price history charts with trend analysis
+- 🌐 **PWA Support** — Works offline on any phone
+- 👤 **Role-based Access** — Farmer, Buyer, Dealer, Admin roles
+- 💎 **Subscription Tiers** — Free, Basic (K99), Pro (K249), Premium (K599)
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    ZAMGROW EXCHANGE                          │
-├──────────────────┬──────────────────┬──────────────────────┤
-│  PRESENTATION    │   APPLICATION    │       DATA           │
-│                  │                  │                      │
-│  React.js 18+    │  Node.js 20+     │  PostgreSQL 15+      │
-│  TypeScript      │  Express 4.x     │  Redis 7+            │
-│  TailwindCSS     │  Prisma ORM      │  16 DB Tables        │
-│  Redux Toolkit   │  Socket.io       │                      │
-│  Recharts        │  JWT Auth        │  Python FastAPI      │
-│  React Router v6 │  Bull.js Queue   │  XGBoost ML          │
-│                  │                  │  Pandas ETL          │
-│  PWA (Workbox)   │  Cloudinary CDN  │                      │
-│  React Native    │  Africa's Talking│  AWS S3 Backups      │
-│  Expo SDK        │  Firebase FCM    │                      │
-└──────────────────┴──────────────────┴──────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                    Frontend (PWA)                    │
+│         React 18 + TypeScript + TailwindCSS         │
+│              Vite · Redux Toolkit · Port 3000        │
+└──────────────────────┬──────────────────────────────┘
+                       │ HTTP / WebSocket
+┌──────────────────────▼──────────────────────────────┐
+│                   Backend API                        │
+│          Node.js + Express + TypeScript             │
+│         Prisma ORM · Socket.IO · Port 3001          │
+└───────┬──────────────────────────┬──────────────────┘
+        │ Prisma                   │ HTTP
+┌───────▼──────┐          ┌────────▼──────────────────┐
+│  PostgreSQL  │          │     Pricing Engine        │
+│  (Port 5432) │          │  Python FastAPI + NumPy   │
+│    + Redis   │          │       Port 8000           │
+│  (Port 6379) │          └───────────────────────────┘
+└──────────────┘
 ```
 
-### Microservices
-- **Frontend** — React PWA + React Native apps
-- **Backend API** — Modular monolith (Auth, Listings, Payments, Notifications)
-- **Pricing Engine** — Standalone Python/FastAPI ML service
-
----
-
-## 🗃️ Database Schema
-
-16 PostgreSQL tables:
-`users` · `provinces` · `districts` · `categories` · `products` · `listings` · `listing_photos` · `offers` · `transactions` · `subscriptions` · `payments` · `reviews` · `price_history` · `notifications` · `price_alerts` · `watchlist` · `credits_log`
-
----
-
-## 🚦 Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 22+
-- Python 3.11+
-- Docker & Docker Compose
-- Git
+- Docker and Docker Compose
+- Node.js 20+ (for local development)
+- Python 3.11+ (for pricing engine)
 
-### Option 1: Docker Compose (Recommended)
+### With Docker Compose (Recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/zamgrow/zamgrow-exchange.git
+git clone https://github.com/yourorg/zamgrow-exchange.git
 cd zamgrow-exchange
-
-# Copy environment files
-cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
 
 # Start all services
 docker compose up -d
 
-# Open in browser
-open http://localhost:3000
+# View logs
+docker compose logs -f
+
+# Access services:
+# Frontend:       http://localhost:3000
+# Backend API:    http://localhost:3001
+# Pricing Engine: http://localhost:8000/docs
 ```
 
-All services start automatically:
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:3001 |
-| API Docs | http://localhost:3001/api/docs |
-| Pricing Engine | http://localhost:8000/docs |
-| PostgreSQL | localhost:5432 |
-| Redis | localhost:6379 |
+### Local Development
 
-### Option 2: Manual Development
-
+**Frontend:**
 ```bash
-# 1. Start databases
-docker compose up postgres redis -d
-
-# 2. Backend
-cd backend
-npm install
-cp .env.example .env
-npx prisma db push
-npx prisma db seed
-npm run dev
-
-# 3. Pricing Engine (new terminal)
-cd pricing-engine
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-
-# 4. Frontend (new terminal)
 cd frontend
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
 
----
+**Backend:**
+```bash
+cd backend
+cp .env.example .env
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev          # http://localhost:3001
+```
 
-## 🔌 API Reference
+**Pricing Engine:**
+```bash
+cd pricing-engine
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+# API docs: http://localhost:8000/docs
+```
 
-Full interactive docs available at `/api/docs` (Swagger UI).
+## 📁 Project Structure
+
+```
+zamgrow-exchange/
+├── frontend/                 # React PWA (TypeScript)
+│   ├── src/
+│   │   ├── pages/            # 11 application pages
+│   │   ├── components/       # Reusable UI components
+│   │   ├── store/            # Redux Toolkit slices
+│   │   └── services/         # API calls + mock data
+│   └── Dockerfile
+├── backend/                  # Node.js Express API
+│   ├── src/
+│   │   ├── routes/           # 7 route modules
+│   │   ├── middleware/       # Auth, rate limiting, credits
+│   │   └── services/         # SMS, payment, notifications
+│   ├── prisma/
+│   │   └── schema.prisma     # 16 database models
+│   └── Dockerfile
+├── pricing-engine/           # Python FastAPI ML service
+│   ├── main.py               # API routes
+│   ├── pricing.py            # Price calculation engine
+│   ├── models.py             # Pydantic schemas
+│   └── Dockerfile
+├── .github/workflows/ci.yml  # GitHub Actions CI/CD
+└── docker-compose.yml        # All services
+```
+
+## 🔧 Environment Variables
+
+| Variable | Service | Description | Default |
+|----------|---------|-------------|---------|
+| `DATABASE_URL` | Backend | PostgreSQL connection string | Required |
+| `REDIS_URL` | Backend | Redis connection string | `redis://localhost:6379` |
+| `JWT_SECRET` | Backend | JWT signing secret | Required (change!) |
+| `JWT_EXPIRES_IN` | Backend | Token expiry duration | `7d` |
+| `PORT` | Backend | API server port | `3001` |
+| `AFRICAS_TALKING_API_KEY` | Backend | SMS gateway API key | Optional |
+| `PRICING_ENGINE_URL` | Backend | Pricing service URL | `http://localhost:8000` |
+| `CORS_ORIGINS` | Backend | Allowed frontend origins | `http://localhost:3000` |
+
+## 📡 API Reference
 
 ### Authentication
-```bash
-# Send OTP
-POST /api/v1/auth/otp/send
-{ "phone": "+260971234567" }
-
-# Verify OTP
-POST /api/v1/auth/otp/verify
-{ "phone": "+260971234567", "otp": "123456" }
-
-# Register
-POST /api/v1/auth/register
-{ "name": "Joseph Mwale", "phone": "+260971234567", "role": "SELLER", "provinceId": 3 }
+```
+POST /api/v1/auth/register       - Register with phone + role
+POST /api/v1/auth/otp/send       - Send OTP to phone
+POST /api/v1/auth/otp/verify     - Verify OTP, get JWT token
+POST /api/v1/auth/login          - Login with phone
 ```
 
 ### Listings
-```bash
-# Browse with filters
-GET /api/v1/listings?category=Cereals&province=Eastern&type=SELL&price_min=200&price_max=400
-
-# Get single listing
-GET /api/v1/listings/:id
-
-# Create listing (authenticated)
-POST /api/v1/listings
-Authorization: Bearer <token>
-{ "type": "SELL", "productName": "Maize", "quantity": 500, "unit": "50kg Bag", "priceZmw": 310, "provinceId": 3 }
+```
+GET  /api/v1/listings            - Browse with filters
+POST /api/v1/listings            - Create listing (1 credit)
+GET  /api/v1/listings/:id        - Get listing detail
+PUT  /api/v1/listings/:id        - Update listing
+POST /api/v1/listings/:id/offers - Make offer
+GET  /api/v1/listings/:id/offers - Get all offers
 ```
 
-### AI Pricing
-```bash
-# Get price suggestion
-GET /api/v1/pricing/suggest?product_id=maize&province_id=3
-
-# Response:
-{
-  "suggested_price": 310.50,
-  "avg_market_price": 315.00,
-  "lowest_price": 280.00,
-  "highest_price": 360.00,
-  "confidence_score": 0.87,
-  "data_points": 142,
-  "trend": "UP",
-  "change_percent": 3.2
-}
+### Market
+```
+GET /api/v1/market/prices        - Price history data
+GET /api/v1/market/heatmap       - Province price heatmap
 ```
 
-### Payments
-```bash
-# Initiate subscription
-POST /api/v1/payments/subscribe
-{ "plan": "MONTHLY", "method": "AIRTEL", "phone": "+260971234567" }
+### Pricing Engine (Port 8000)
+```
+GET /pricing/suggest             - AI price suggestion
+GET /pricing/heatmap             - Province heatmap
+GET /pricing/history             - Historical prices
+GET /pricing/products            - List products
+GET /pricing/market-summary      - Market overview
 ```
 
----
+## 🌍 Zambia-Specific Data
 
-## ⚙️ Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://...` |
-| `REDIS_URL` | Redis connection | `redis://localhost:6379` |
-| `JWT_SECRET` | JWT signing key | `your-secret-key` |
-| `AT_API_KEY` | Africa's Talking API key | `abc123` |
-| `CLOUDINARY_CLOUD_NAME` | Image CDN | `my-cloud` |
-| `MTN_MOMO_API_KEY` | MTN MoMo key | `xyz789` |
-| `AIRTEL_CLIENT_ID` | Airtel Money client ID | `def456` |
-| `SENDGRID_API_KEY` | Email service | `SG.xxx` |
-| `PRICING_ENGINE_URL` | ML service URL | `http://pricing:8000` |
-
----
-
-## 📱 Mobile Apps
-
-React Native (Expo) apps for Android and iOS:
-
-```bash
-cd mobile  # React Native app
-npm install
-npx expo start
-
-# Build for production
-npx expo build:android
-npx expo build:ios
-```
-
-**Minimum requirements:**
-- Android 8.0 (API 26+)
-- iOS 14.0+
-
----
-
-## 🤖 AI Pricing Engine
-
-The standalone Python/FastAPI microservice powers all price intelligence:
-
-```bash
-cd pricing-engine
-pip install -r requirements.txt
-uvicorn main:app --reload
-
-# Docs at http://localhost:8000/docs
-```
-
-**Model details:**
-- Primary: XGBoost Regressor
-- Fallback: Weighted Moving Average (< 30 data points)
-- Features: `product_id, province_id, month, season, active_listings, weather_index`
-- Retraining: Weekly, Sundays 02:00 CAT (Bull.js scheduled job)
-
----
-
-## 🧪 Testing
-
-```bash
-# Frontend
-cd frontend
-npm run build   # Build check
-
-# Backend
-cd backend
-npm run build   # TypeScript compilation
-curl http://localhost:3001/health  # Health check
-
-# Pricing Engine
-cd pricing-engine
-curl "http://localhost:8000/pricing/suggest?product_id=maize&province_id=3"
-```
-
----
-
-## 🚀 Deployment
-
-### Production Stack
-- **Frontend** → Vercel / Netlify
-- **Backend** → Railway / AWS ECS / DigitalOcean
-- **Database** → PostgreSQL (AWS RDS or Railway)
-- **Redis** → Upstash / Railway Redis
-- **Images** → Cloudinary CDN
-- **Pricing Engine** → Railway / AWS ECS
-
-### Docker Production Build
-
-```bash
-# Build all images
-docker compose -f docker-compose.prod.yml build
-
-# Deploy
-docker compose -f docker-compose.prod.yml up -d
-```
-
----
-
-## 📊 Performance Targets
-
-| Metric | Target |
-|--------|--------|
-| API Latency (p95) | < 200ms |
-| First Contentful Paint (3G) | < 3.0s |
-| WebSocket Latency | < 500ms |
-| Concurrent Users (MVP) | 10,000 |
-| Uptime SLA | 99.9% |
-
----
-
-## 🛡️ Security
-
-- HTTPS/TLS 1.3 enforced
-- JWT access tokens (15-min expiry) + HTTP-only refresh cookies (7-day)
-- Bcrypt password hashing (work factor 12)
-- AES-256 PII encryption at rest (NRC numbers)
-- Rate limiting: 100 req/min/IP
-- Prisma ORM (parameterized queries — SQL injection prevention)
-- Strict CSP headers, DOM sanitization (XSS prevention)
-- OWASP Top 10 compliance
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1 (MVP) ✅
-- Core auth (Phone/OTP)
-- Listing CRUD (Buy & Sell)
-- Search and browse
-- Mobile money integration
-- Credit/subscription system
-- Admin panel
-
-### Phase 2 🔄
-- Pricing Engine deployment
-- Offer/counter-offer system
-- Reviews and ratings
-- Push notifications
-- Native Android/iOS release
-
-### Phase 3 📋
-- Bemba, Nyanja, Tonga, Lozi localization
-- CSV/Excel data export
-- Advanced analytics
-- Logistics integration
-
----
+- **10 Provinces** with districts (Central, Copperbelt, Eastern, Luapula, Lusaka, Muchinga, Northern, North-Western, Southern, Western)
+- **10 Categories**: Cereals 🌾, Legumes 🫘, Vegetables 🥬, Fruits 🍊, Livestock 🐄, Fisheries 🐟, Dairy 🥛, Poultry 🐔, Root Crops 🍠, Cash Crops 🌿
+- **40+ Products** with real ZMW pricing
+- **Province pricing multipliers** reflecting actual supply/demand
+- **Seasonal factors** calibrated to Zambia's agricultural calendar
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit changes: `git commit -m 'feat: add new feature'`
-4. Push: `git push origin feat/your-feature`
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-Please follow [Conventional Commits](https://www.conventionalcommits.org/).
-
----
-
-## 👥 Team
-
-Built by the Zamgrow Exchange team. Designed for Zambian farmers and agribusiness.
-
-**Contact:** hello@zamgrow.co.zm | +260 211 123 456  
-**Location:** Cairo Road, Lusaka, Zambia
-
----
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) file.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-  <strong>🇿🇲 Made for Zambia, by Zambia</strong><br>
-  <em>Connecting farmers to markets since 2025</em>
+Made with ❤️ in Zambia 🇿🇲 | © 2024 Zamgrow Exchange
 </div>

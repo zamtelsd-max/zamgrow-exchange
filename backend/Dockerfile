@@ -1,18 +1,23 @@
-FROM node:22-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --silent
+RUN npm ci --quiet
 COPY . .
-RUN npx prisma generate
 RUN npm run build
 
-FROM node:22-alpine
+FROM node:20-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache curl
+COPY package*.json ./
+RUN npm ci --only=production --quiet
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json .
-COPY --from=builder /app/prisma ./prisma
-RUN mkdir -p logs
+COPY prisma ./prisma
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
 CMD ["node", "dist/app.js"]

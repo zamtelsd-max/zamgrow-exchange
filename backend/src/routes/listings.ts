@@ -1,166 +1,134 @@
 import { Router, Response } from 'express'
-import Joi from 'joi'
-import { authenticate, AuthRequest } from '../middleware/auth'
-import { sendSuccess, sendError, getPaginationParams } from '../utils/helpers'
+import prisma from '../prisma'
+import { authenticate, AuthRequest, optionalAuth } from '../middleware/auth'
+import { requireCredits } from '../middleware/credits'
+import { paginate, calculateExpiryDate } from '../utils/helpers'
+import { z } from 'zod'
 
 const router = Router()
 
-// Mock data (replace with Prisma queries in production)
-const mockListings = [
-  { id: 'l1', type: 'SELL', productName: 'Maize', quantity: 500, unit: '50kg Bag', priceZmw: 310, status: 'ACTIVE', province: 'Eastern', offersCount: 7, viewsCount: 143 },
-  { id: 'l2', type: 'SELL', productName: 'Soya Beans', quantity: 200, unit: '50kg Bag', priceZmw: 420, status: 'ACTIVE', province: 'Southern', offersCount: 12, viewsCount: 287 },
-  { id: 'l3', type: 'BUY', productName: 'Maize', quantity: 1000, unit: '50kg Bag', priceZmw: 300, status: 'ACTIVE', province: 'Lusaka', offersCount: 5, viewsCount: 198 },
-]
-
-/**
- * @swagger
- * /listings:
- *   get:
- *     summary: Get all listings with filters
- *     tags: [Listings]
- *     parameters:
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *       - in: query
- *         name: province
- *         schema:
- *           type: string
- *       - in: query
- *         name: type
- *         schema:
- *           type: string
- *           enum: [BUY, SELL]
- *       - in: query
- *         name: price_min
- *         schema:
- *           type: number
- *       - in: query
- *         name: price_max
- *         schema:
- *           type: number
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- */
-router.get('/', async (req, res) => {
-  const { page, limit, skip } = getPaginationParams(req.query as Record<string, string>)
-  const { category, province, type, price_min, price_max, q } = req.query
-
-  let filtered = [...mockListings]
-  if (type) filtered = filtered.filter(l => l.type === type)
-  if (province) filtered = filtered.filter(l => l.province === province)
-  if (price_min) filtered = filtered.filter(l => l.priceZmw >= Number(price_min))
-  if (price_max) filtered = filtered.filter(l => l.priceZmw <= Number(price_max))
-  if (q) filtered = filtered.filter(l => l.productName.toLowerCase().includes(String(q).toLowerCase()))
-
-  const total = filtered.length
-  const paginated = filtered.slice(skip, skip + limit)
-
-  sendSuccess(res, paginated, undefined, 200, {
-    page, limit, total, totalPages: Math.ceil(total / limit)
-  })
+const listingSchema = z.object({
+  title: z.string().min(5).max(200),
+  description: z.string().optional(),
+  type: z.enum(['sell', 'buy']),
+  price: z.number().positive(),
+  unit: z.string().min(1),
+  quantity: z.number().positive(),
+  productId: z.number().int().positive(),
+  province: z.string(),
+  district: z.string().optional(),
+  photos: z.array(z.string()).optional(),
 })
 
-/**
- * @swagger
- * /listings/{id}:
- *   get:
- *     summary: Get a single listing by ID
- *     tags: [Listings]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- */
-router.get('/:id', async (req, res) => {
-  const listing = mockListings.find(l => l.id === req.params.id)
-  if (!listing) { sendError(res, 'Listing not found', 404); return }
-  sendSuccess(res, listing)
-})
-
-/**
- * @swagger
- * /listings:
- *   post:
- *     summary: Create a new listing
- *     tags: [Listings]
- *     security:
- *       - bearerAuth: []
- */
-router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
-  const schema = Joi.object({
-    type: Joi.string().valid('BUY', 'SELL').required(),
-    productName: Joi.string().required(),
-    categoryId: Joi.number().optional(),
-    quantity: Joi.number().positive().required(),
-    unit: Joi.string().required(),
-    priceZmw: Joi.number().positive().required(),
-    provinceId: Joi.number().required(),
-    districtId: Joi.number().optional(),
-    description: Joi.string().max(1000).optional(),
-    dateAvailable: Joi.date().optional(),
-    deadline: Joi.date().optional(),
-  })
-
-  const { error, value } = schema.validate(req.body)
-  if (error) { sendError(res, error.details[0].message); return }
-
-  const newListing = {
-    id: `listing-${Date.now()}`,
-    userId: req.user!.userId,
-    ...value,
-    status: 'ACTIVE',
-    expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
-    offersCount: 0,
-    viewsCount: 0,
-    createdAt: new Date().toISOString(),
+router.get('/', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { category, province, district, type, price_min, price_max, search, sort, page = '1', limit = '12' } = req.query as Record<string, string>
+    const where: Record<string, unknown> = { status: 'active' }
+    if (province) where.province = province
+    if (district) where.district = district
+    if (type) where.type = type
+    if (search) where.title = { contains: search, mode: 'insensitive' }
+    if (price_min || price_max) {
+      where.price = {}
+      if (price_min) (where.price as Record<string, number>).gte = parseFloat(price_min)
+      if (price_max) (where.price as Record<string, number>).lte = parseFloat(price_max)
+    }
+    const orderBy: Record<string, string> = sort === 'price_asc' ? { price: 'asc' } : sort === 'price_desc' ? { price: 'desc' } : { createdAt: 'desc' }
+    const { skip, take } = paginate(parseInt(page), parseInt(limit))
+    const [listings, total] = await Promise.all([
+      prisma.listing.findMany({
+        where,
+        skip,
+        take,
+        orderBy,
+        include: { photos: { take: 1 }, seller: { select: { name: true, rating: true, verified: true } }, product: { include: { category: true } } }
+      }),
+      prisma.listing.count({ where })
+    ])
+    res.json({ listings, total, totalPages: Math.ceil(total / take), page: parseInt(page) })
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch listings' })
   }
-
-  mockListings.push(newListing as typeof mockListings[0])
-  sendSuccess(res, newListing, 'Listing created successfully', 201)
 })
 
-/**
- * @swagger
- * /listings/{id}:
- *   put:
- *     summary: Update a listing
- *     tags: [Listings]
- *     security:
- *       - bearerAuth: []
- */
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
-  const idx = mockListings.findIndex(l => l.id === req.params.id)
-  if (idx === -1) { sendError(res, 'Listing not found', 404); return }
-
-  const updated = { ...mockListings[idx], ...req.body, updatedAt: new Date().toISOString() }
-  mockListings[idx] = updated
-  sendSuccess(res, updated, 'Listing updated')
+router.post('/', authenticate, requireCredits(1), async (req: AuthRequest, res: Response) => {
+  try {
+    const data = listingSchema.parse(req.body)
+    const listing = await prisma.$transaction(async (tx) => {
+      const l = await tx.listing.create({
+        data: {
+          ...data,
+          sellerId: req.user!.userId,
+          expiresAt: calculateExpiryDate(90),
+          photos: data.photos ? { createMany: { data: data.photos.map((url, order) => ({ url, order })) } } : undefined,
+        },
+        include: { photos: true, product: { include: { category: true } } }
+      })
+      await tx.user.update({ where: { id: req.user!.userId }, data: { credits: { decrement: 1 } } })
+      await tx.creditsLog.create({ data: { userId: req.user!.userId, amount: -1, type: 'spent', description: `Listed: ${data.title}` } })
+      return l
+    })
+    res.status(201).json(listing)
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: 'Invalid data', details: err.errors })
+    res.status(500).json({ error: 'Failed to create listing' })
+  }
 })
 
-/**
- * @swagger
- * /listings/{id}:
- *   delete:
- *     summary: Delete / archive a listing
- *     tags: [Listings]
- *     security:
- *       - bearerAuth: []
- */
-router.delete('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
-  const idx = mockListings.findIndex(l => l.id === req.params.id)
-  if (idx === -1) { sendError(res, 'Listing not found', 404); return }
-  mockListings[idx] = { ...mockListings[idx], status: 'EXPIRED' }
-  sendSuccess(res, null, 'Listing removed')
+router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: req.params.id },
+      include: { photos: true, seller: { select: { id: true, name: true, phone: true, rating: true, totalReviews: true, verified: true, province: true, district: true, createdAt: true } }, product: { include: { category: true } }, offers: { include: { buyer: { select: { name: true } } } } }
+    })
+    if (!listing) return res.status(404).json({ error: 'Listing not found' })
+    await prisma.listing.update({ where: { id: req.params.id }, data: { views: { increment: 1 } } })
+    res.json(listing)
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch listing' })
+  }
+})
+
+router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const listing = await prisma.listing.findUnique({ where: { id: req.params.id } })
+    if (!listing) return res.status(404).json({ error: 'Listing not found' })
+    if (listing.sellerId !== req.user!.userId && req.user!.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized' })
+    }
+    const updated = await prisma.listing.update({ where: { id: req.params.id }, data: req.body })
+    res.json(updated)
+  } catch {
+    res.status(500).json({ error: 'Failed to update listing' })
+  }
+})
+
+router.post('/:id/offers', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const listing = await prisma.listing.findUnique({ where: { id: req.params.id } })
+    if (!listing) return res.status(404).json({ error: 'Listing not found' })
+    if (listing.sellerId === req.user!.userId) return res.status(400).json({ error: 'Cannot offer on your own listing' })
+    const offer = await prisma.offer.create({
+      data: { listingId: req.params.id, buyerId: req.user!.userId, price: req.body.price, message: req.body.message },
+      include: { buyer: { select: { name: true, phone: true } } }
+    })
+    res.status(201).json(offer)
+  } catch {
+    res.status(500).json({ error: 'Failed to create offer' })
+  }
+})
+
+router.get('/:id/offers', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const offers = await prisma.offer.findMany({
+      where: { listingId: req.params.id },
+      include: { buyer: { select: { name: true, phone: true, rating: true } } },
+      orderBy: { createdAt: 'desc' }
+    })
+    res.json(offers)
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch offers' })
+  }
 })
 
 export default router

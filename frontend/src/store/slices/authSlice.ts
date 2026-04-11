@@ -1,72 +1,47 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-export interface User {
-  id: string
-  name: string
-  phone: string
-  email?: string
-  role: 'farmer' | 'buyer' | 'dealer' | 'admin'
-  province: string
-  district: string
-  credits: number
-  subscription: 'free' | 'basic' | 'pro' | 'premium'
-  avatar?: string
-  verified: boolean
-  rating: number
-  totalReviews: number
-  createdAt: string
-}
+import { User } from '../../types'
 
 interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
-  loading: boolean
-  otpSent: boolean
-  otpPhone: string
+  isLoading: boolean
+  error: string | null
 }
 
-const initialState: AuthState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  loading: false,
-  otpSent: false,
-  otpPhone: '',
+const DEMO_USER: User = {
+  id: 'demo-user',
+  name: 'John Nkhoma',
+  phone: '+260971234567',
+  email: 'john@zamgrow.co.zm',
+  role: 'BOTH',
+  creditsBalance: 10,
+  isVerified: true,
+  rating: 4.7,
+  reviewCount: 18,
+  completedTransactions: 24,
+  subscription: { id: 'sub1', userId: 'demo-user', plan: 'MONTHLY', startDate: '2025-04-01', endDate: '2025-05-01', status: 'ACTIVE' },
+  createdAt: '2024-10-01T10:00:00Z',
 }
+
+const initialState: AuthState = { user: null, token: null, isAuthenticated: false, isLoading: false, error: null }
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = action.payload.user
-      state.token = action.payload.token
-      state.isAuthenticated = true
-      localStorage.setItem('zamgrow_user', JSON.stringify(action.payload.user))
-      localStorage.setItem('zamgrow_token', action.payload.token)
+    loginStart(state) { state.isLoading = true; state.error = null },
+    loginSuccess(state, action: PayloadAction<{ user: User; token: string }>) {
+      state.isLoading = false; state.isAuthenticated = true
+      state.user = action.payload.user; state.token = action.payload.token; state.error = null
     },
-    logout: (state) => {
-      state.user = null
-      state.token = null
-      state.isAuthenticated = false
-      localStorage.removeItem('zamgrow_user')
-      localStorage.removeItem('zamgrow_token')
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload
-    },
-    setOtpSent: (state, action: PayloadAction<{ sent: boolean; phone: string }>) => {
-      state.otpSent = action.payload.sent
-      state.otpPhone = action.payload.phone
-    },
-    updateCredits: (state, action: PayloadAction<number>) => {
-      if (state.user) {
-        state.user.credits = action.payload
-      }
-    },
+    loginFailure(state, action: PayloadAction<string>) { state.isLoading = false; state.error = action.payload },
+    logout(state) { state.user = null; state.token = null; state.isAuthenticated = false; state.error = null },
+    updateUser(state, action: PayloadAction<Partial<User>>) { if (state.user) state.user = { ...state.user, ...action.payload } },
+    deductCredit(state) { if (state.user && state.user.creditsBalance > 0) state.user.creditsBalance -= 1 },
+    demoLogin(state) { state.isAuthenticated = true; state.user = DEMO_USER; state.token = 'demo-token-xxx'; state.isLoading = false },
   },
 })
 
-export const { setUser, logout, setLoading, setOtpSent, updateCredits } = authSlice.actions
+export const { loginStart, loginSuccess, loginFailure, logout, updateUser, deductCredit, demoLogin } = authSlice.actions
 export default authSlice.reducer

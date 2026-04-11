@@ -1,66 +1,78 @@
 import { Router, Response } from 'express'
-import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth'
-import { sendSuccess } from '../utils/helpers'
+import prisma from '../prisma'
+import { authenticate, AuthRequest, requireRole } from '../middleware/auth'
 
 const router = Router()
-router.use(authenticate, requireAdmin)
+router.use(authenticate, requireRole('admin'))
 
-/**
- * @swagger
- * /admin/stats:
- *   get:
- *     summary: Get admin KPI statistics
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/stats', (req: AuthRequest, res: Response) => {
-  sendSuccess(res, {
-    totalUsers: 14823,
-    totalListings: 3241,
-    activeListings: 2187,
-    monthlyRevenue: 148420,
-    totalTransactions: 8934,
-    pendingKyc: 47,
-    newUsersToday: 23,
-    newListingsToday: 61,
-  })
+router.get('/stats', async (_req: AuthRequest, res: Response) => {
+  try {
+    const [totalUsers, activeListings, totalTransactions] = await Promise.all([
+      prisma.user.count(),
+      prisma.listing.count({ where: { status: 'active' } }),
+      prisma.transaction.count({ where: { status: 'completed' } }),
+    ])
+    const revenue = await prisma.transaction.aggregate({ where: { status: 'completed' }, _sum: { amount: true } })
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const [newUsersThisWeek, listingsThisWeek, pendingModeration] = await Promise.all([
+      prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.listing.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.listing.count({ where: { status: 'pending' } }),
+    ])
+    res.json({ totalUsers, activeListings, totalTransactions, revenue: revenue._sum.amount || 0, newUsersThisWeek, listingsThisWeek, pendingModeration })
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch stats' })
+  }
 })
 
-/**
- * @swagger
- * /admin/users:
- *   get:
- *     summary: List all users (admin)
- *     tags: [Admin]
- */
-router.get('/users', (req: AuthRequest, res: Response) => {
-  sendSuccess(res, [
-    { id: 'u1', name: 'Joseph Mwale', phone: '+260971234567', role: 'SELLER', isVerified: true, creditsBalance: 8, createdAt: '2024-01-15' },
-    { id: 'u2', name: 'Grace Banda', phone: '+260961234567', role: 'BUYER', isVerified: true, creditsBalance: 10, createdAt: '2024-02-10' },
-  ])
+router.get('/users', async (req: AuthRequest, res: Response) => {
+  try {
+    const { page = '1', limit = '20', role, search } = req.query as Record<string, string>
+    const where: Record<string, unknown> = {}
+    if (role) where.role = role
+    if (search) where.name = { contains: search, mode: 'insensitive' }
+    const users = await prisma.user.findMany({ where, take: parseInt(limit), skip: (parseInt(page) - 1) * parseInt(limit), orderBy: { createdAt: 'desc' }, select: { id: true, name: true, phone: true, role: true, province: true, subscription: true, verified: true, banned: true, credits: true, createdAt: true } })
+    const total = await prisma.user.count({ where })
+    res.json({ users, total })
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch users' })
+  }
 })
 
-/**
- * @swagger
- * /admin/users/{id}/ban:
- *   post:
- *     summary: Ban/suspend a user
- *     tags: [Admin]
- */
-router.post('/users/:id/ban', (req: AuthRequest, res: Response) => {
-  sendSuccess(res, { userId: req.params.id, banned: true }, 'User banned')
+router.post('/users/:id/ban', async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.update({ where: { id: req.params.id }, data: { banned: true } })
+    res.json({ success: true, user })
+  } catch {
+    res.status(500).json({ error: 'Failed to ban user' })
+  }
 })
 
-/**
- * @swagger
- * /admin/users/{id}/verify-kyc:
- *   post:
- *     summary: Approve KYC for user
- *     tags: [Admin]
- */
-router.post('/users/:id/verify-kyc', (req: AuthRequest, res: Response) => {
-  sendSuccess(res, { userId: req.params.id, isVerified: true }, 'KYC approved')
+router.get('/moderation', async (_req: AuthRequest, res: Response) => {
+  try {
+    const listings = await prisma.listing.findMany({ where: { status: 'pending' }, include: { photos: { take: 1 }, seller: { select: { name: true, phone: true } }, product: true }, orderBy: { createdAt: 'asc' } })
+    res.json(listings)
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch moderation queue' })
+  }
+})
+
+router.post('/listings/:id/approve', async (req: AuthRequest, res: Response) => {
+  try {
+    const listing = await prisma.listing.update({ where: { id: req.params.id }, data: { status: 'active' } })
+    res.json(listing)
+  } catch {
+    res.status(500).json({ error: 'Failed to approve listing' })
+  }
+})
+
+router.post('/listings/:id/reject', async (req: AuthRequest, res: Response) => {
+  try {
+    const listing = await prisma.listing.update({ where: { id: req.params.id }, data: { status: 'rejected' } })
+    res.json(listing)
+  } catch {
+    res.status(500).json({ error: 'Failed to reject listing' })
+  }
 })
 
 export default router

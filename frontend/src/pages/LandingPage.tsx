@@ -90,25 +90,25 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="gradient-hero text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-green-400 rounded-full filter blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-300 rounded-full filter blur-3xl" />
+          <div className="absolute top-10 left-10 w-72 h-72 bg-green-600 opacity-40 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-700 opacity-40 rounded-full filter blur-3xl" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm mb-6">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white font-medium mb-6">
               <Zap className="w-4 h-4 text-amber-400" />
               <span>🇿🇲 Zambia's #1 Agricultural Marketplace</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-              Connect. Trade.{' '}
-              <span className="bg-gradient-to-r from-green-300 to-emerald-200 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 drop-shadow-lg">
+              <span className="text-white">Connect. Trade.</span>{' '}
+              <span className="text-yellow-300">
                 Grow.
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-green-100 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow">
               Zamgrow Exchange connects Zambian farmers directly to buyers with AI-powered pricing intelligence. 
               No middlemen. Fair prices. All 10 provinces.
             </p>

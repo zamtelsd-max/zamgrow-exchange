@@ -18,7 +18,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
-              Zambia's #1 intelligent agricultural marketplace. Connecting farmers to markets with AI-powered pricing intelligence.
+              Zamgrow Exchange — Zambia's premier agricultural marketplace. Connecting farmers, buyers, and agro-dealers with AI-powered pricing.
             </p>
             <div className="flex gap-3">
               {['FB','TW','IG'].map((s, i) => (

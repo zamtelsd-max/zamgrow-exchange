@@ -234,7 +234,7 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <h2 className="page-title mb-4">Why Zamgrow Exchange?</h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-            Built specifically for Zambian agriculture. Every feature designed for the farmer in the field.
+            Built specifically for Zambian agriculture. Every feature designed for the farmer, trader, and agro-dealer.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

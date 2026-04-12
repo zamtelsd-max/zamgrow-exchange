@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../store'
 import { setSelectedProduct, setSelectedProvince } from '../store/slices/marketSlice'
@@ -9,13 +9,23 @@ import {
 } from 'recharts'
 import { TrendingUp, TrendingDown, Minus, Bell, Plus, Filter, Info } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { getLivePrices } from '../services/liveprices'
+import { setPriceData, setLoading } from '../store/slices/marketSlice'
 import clsx from 'clsx'
 
 const PRODUCTS = ['Maize', 'Soya Beans', 'Wheat', 'Groundnuts', 'Kapenta', 'Tomatoes', 'Sunflower']
 
 export default function MarketPage() {
   const dispatch = useDispatch()
-  const { priceData, heatmapData, selectedProduct, selectedProvince } = useSelector((s: RootState) => s.market)
+  const { priceData, heatmapData, selectedProduct, selectedProvince, isLoading } = useSelector((s: RootState) => s.market)
+
+  useEffect(() => {
+    dispatch(setLoading(true))
+    getLivePrices().then(data => {
+      dispatch(setPriceData(data))
+      dispatch(setLoading(false))
+    }).catch(() => dispatch(setLoading(false)))
+  }, [dispatch])
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
   const [alertProduct, setAlertProduct] = useState('')
   const [alertThreshold, setAlertThreshold] = useState('')
@@ -23,9 +33,7 @@ export default function MarketPage() {
 
   const chartData = selectedProduct.toLowerCase().includes('soya') ? PRICE_HISTORY_SOYA : PRICE_HISTORY_MAIZE
 
-  const displayedPrices = selectedProvince === 'all'
-    ? MOCK_PRICE_DATA
-    : MOCK_PRICE_DATA.filter(p => p.province === selectedProvince)
+  const displayedPrices = selectedProvince === 'all' ? priceData : priceData.filter((p: any) => p.province === selectedProvince)
 
   // Province heatmap colors
   const getHeatColor = (intensity: number) => {

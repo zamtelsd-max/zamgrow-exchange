@@ -31,6 +31,7 @@ export interface Category {
   id: number;
   name: string;
   emoji: string;
+  image?: string;
   parentId?: number;
   items: string[];
 }

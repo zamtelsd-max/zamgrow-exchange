@@ -94,14 +94,14 @@ export default function LandingPage() {
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-700 opacity-40 rounded-full filter blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white font-medium mb-6">
               <Zap className="w-4 h-4 text-amber-400" />
               <span>🇿🇲 Zambia's #1 Agricultural Marketplace</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 drop-shadow-lg">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 drop-shadow-lg">
               <span className="text-white">Connect. Trade.</span>{' '}
               <span className="text-yellow-300">
                 Grow.

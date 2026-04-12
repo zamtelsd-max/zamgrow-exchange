@@ -17,18 +17,18 @@ export const PROVINCES: Province[] = [
 ]
 
 export const CATEGORIES: Category[] = [
-  { id: 1, name: 'Cereals', emoji: '🌾', items: ['Maize', 'Wheat', 'Sorghum', 'Millet', 'Rice'] },
-  { id: 2, name: 'Legumes', emoji: '🫘', items: ['Soya Beans', 'Groundnuts', 'Beans', 'Cowpeas'] },
-  { id: 3, name: 'Vegetables', emoji: '🥬', items: ['Tomatoes', 'Cabbage', 'Onions', 'Rape', 'Okra'] },
-  { id: 4, name: 'Fruits', emoji: '🍊', items: ['Mangoes', 'Bananas', 'Avocados', 'Pineapples'] },
-  { id: 5, name: 'Livestock', emoji: '🐄', items: ['Cattle', 'Goats', 'Sheep', 'Pigs'] },
-  { id: 6, name: 'Fisheries', emoji: '🐟', items: ['Kapenta', 'Tilapia', 'Bream', 'Catfish'] },
-  { id: 7, name: 'Dairy', emoji: '🥛', items: ['Fresh Milk', 'Yoghurt', 'Cheese'] },
-  { id: 8, name: 'Poultry', emoji: '🐔', items: ['Broilers', 'Layers', 'Eggs', 'Day-old Chicks'] },
-  { id: 9, name: 'Root Crops', emoji: '🍠', items: ['Cassava', 'Sweet Potatoes', 'Irish Potatoes'] },
-  { id: 10, name: 'Cash Crops', emoji: '🌿', items: ['Tobacco', 'Cotton', 'Sunflower', 'Coffee'] },
-  { id: 11, name: 'Honey & Bees', emoji: '🍯', items: ['Raw Honey', 'Beeswax'] },
-  { id: 12, name: 'Nuts & Seeds', emoji: '🥜', items: ['Cashew Nuts', 'Sesame', 'Pumpkin Seeds'] },
+  { id: 1, name: 'Cereals', emoji: '🌾', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&q=80', items: ['Maize', 'Wheat', 'Sorghum', 'Millet', 'Rice'] },
+  { id: 2, name: 'Legumes', emoji: '🫘', image: 'https://images.unsplash.com/photo-1508504509543-5a56bc7fdc5a?w=400&q=80', items: ['Soya Beans', 'Groundnuts', 'Beans', 'Cowpeas'] },
+  { id: 3, name: 'Vegetables', emoji: '🥬', image: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=400&q=80', items: ['Tomatoes', 'Cabbage', 'Onions', 'Rape', 'Okra'] },
+  { id: 4, name: 'Fruits', emoji: '🍊', image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&q=80', items: ['Mangoes', 'Bananas', 'Avocados', 'Pineapples'] },
+  { id: 5, name: 'Livestock', emoji: '🐄', image: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400&q=80', items: ['Cattle', 'Goats', 'Sheep', 'Pigs'] },
+  { id: 6, name: 'Fisheries', emoji: '🐟', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400&q=80', items: ['Kapenta', 'Tilapia', 'Bream', 'Catfish'] },
+  { id: 7, name: 'Dairy', emoji: '🥛', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80', items: ['Fresh Milk', 'Yoghurt', 'Cheese'] },
+  { id: 8, name: 'Poultry', emoji: '🐔', image: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=400&q=80', items: ['Broilers', 'Layers', 'Eggs', 'Day-old Chicks'] },
+  { id: 9, name: 'Root Crops', emoji: '🍠', image: 'https://images.unsplash.com/photo-1518977676405-d21e58ae77ea?w=400&q=80', items: ['Cassava', 'Sweet Potatoes', 'Irish Potatoes'] },
+  { id: 10, name: 'Cash Crops', emoji: '🌿', image: 'https://images.unsplash.com/photo-1490750967868-88df5691cc36?w=400&q=80', items: ['Tobacco', 'Cotton', 'Sunflower', 'Coffee'] },
+  { id: 11, name: 'Honey & Bees', emoji: '🍯', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&q=80', items: ['Raw Honey', 'Beeswax'] },
+  { id: 12, name: 'Nuts & Seeds', emoji: '🥜', image: 'https://images.unsplash.com/photo-1567632338614-5c3a5f45c157?w=400&q=80', items: ['Cashew Nuts', 'Sesame', 'Pumpkin Seeds'] },
 ]
 
 export const UNITS = ['50kg Bag', '90kg Bag', 'Tonne (MT)', 'Kg', 'Litre', 'Head', 'Crate', 'Bundle', 'Piece', 'Dozen']

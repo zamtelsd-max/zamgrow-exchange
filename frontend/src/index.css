@@ -93,3 +93,19 @@
 .skeleton {
   @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg;
 }
+
+/* ── Price Ticker Scroll Animation ─────────────────────────────────────── */
+.ticker-track {
+  display: inline-flex;
+  animation: ticker-scroll 60s linear infinite;
+  will-change: transform;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}

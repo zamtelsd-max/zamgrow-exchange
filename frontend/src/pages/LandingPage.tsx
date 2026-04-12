@@ -179,10 +179,26 @@ export default function LandingPage() {
             <Link
               key={cat.id}
               to={`/browse?category=${cat.name}`}
-              className="card p-4 text-center hover:border-primary-200 hover:bg-primary-50 transition-all cursor-pointer group"
+              className="group relative overflow-hidden rounded-xl border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg transition-all cursor-pointer bg-white"
             >
-              <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{cat.emoji}</div>
-              <div className="text-xs font-medium text-gray-700">{cat.name}</div>
+              <div className="relative aspect-square overflow-hidden">
+                {cat.image ? (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display='none' }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center text-4xl">{cat.emoji}</div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <span className="absolute top-1.5 right-1.5 text-lg bg-white/90 rounded-md px-1 shadow">{cat.emoji}</span>
+                <div className="absolute bottom-0 left-0 right-0 p-2">
+                  <p className="text-white text-xs font-bold leading-tight drop-shadow">{cat.name}</p>
+                </div>
+              </div>
             </Link>
           ))}
         </div>

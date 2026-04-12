@@ -63,11 +63,16 @@ export default function Navbar() {
             {isAuthenticated && user ? (
               <>
                 {/* Credits Badge */}
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <button
+                  onClick={() => navigate('/payment', { state: { amount: 50, credits: 5, purpose: 'Credit Top-up' } })}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                  title="Top up credits"
+                >
                   <Coins className="w-4 h-4 text-amber-600" />
                   <span className="text-sm font-semibold text-amber-700">{user.creditsBalance}</span>
                   <span className="text-xs text-amber-500">credits</span>
-                </div>
+                  <span className="text-xs text-amber-400 font-medium">+ Top Up</span>
+                </button>
 
                 {/* Post Listing Button */}
                 <button

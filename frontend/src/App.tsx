@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage'
 import SubscribePage from './pages/SubscribePage'
 import AdminPage from './pages/AdminPage'
 import WatchlistPage from './pages/WatchlistPage'
+import PaymentPage from './pages/PaymentPage'
 import AuthModal from './components/ui/AuthModal'
 import SubscribeModal from './components/ui/SubscribeModal'
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="/subscribe" element={<SubscribePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
         </Routes>
       </Layout>
       {isAuthModalOpen && <AuthModal />}

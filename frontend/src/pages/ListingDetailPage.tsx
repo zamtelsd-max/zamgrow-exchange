@@ -269,8 +269,11 @@ export default function ListingDetailPage() {
                     </button>
                     <p className="text-xs text-center text-gray-400">Costs 1 credit. You have {user?.creditsBalance ?? 0} credits.</p>
                     {isAuthenticated && user && user.creditsBalance === 0 && (
-                      <button onClick={() => dispatch(openSubscribeModal())} className="btn-amber w-full py-3">
-                        Subscribe to Continue
+                      <button
+                        onClick={() => navigate('/payment', { state: { amount: 50, credits: 5, purpose: '5 Offer Credits' } })}
+                        className="btn-amber w-full py-3 flex items-center justify-center gap-2"
+                      >
+                        💳 Buy Credits (K50 → 5 credits)
                       </button>
                     )}
                   </div>

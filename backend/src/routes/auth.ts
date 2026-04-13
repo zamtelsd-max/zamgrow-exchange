@@ -15,6 +15,9 @@ const registerSchema = z.object({
   role: z.enum(['farmer', 'buyer', 'dealer', 'admin', 'tdr', 'zbm', 'hsd']),
   province: z.string().min(1),
   district: z.string().optional(),
+  zoneId: z.string().optional(),
+  zbmId: z.string().optional(),
+  territory: z.string().optional(),
 })
 
 router.post('/register', authLimiter, async (req: Request, res: Response) => {

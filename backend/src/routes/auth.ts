@@ -12,7 +12,7 @@ const router = Router()
 const registerSchema = z.object({
   name: z.string().min(2).max(100),
   phone: z.string().regex(/^\+260\d{9}$/),
-  role: z.enum(['farmer', 'buyer', 'dealer']),
+  role: z.enum(['farmer', 'buyer', 'dealer', 'admin', 'tdr', 'zbm', 'hsd']),
   province: z.string().min(1),
   district: z.string().optional(),
 })

@@ -36,6 +36,17 @@ model User {
   subscriptions Subscription[]
   creditsLog    CreditsLog[]
   otpCodes      OtpCode[]
+
+  // Sales hierarchy
+  zoneId        String?
+  tdrZone       Zone?          @relation("TDRZone", fields: [zoneId], references: [id])
+  zbmZone       Zone?          @relation("ZBMZone")
+  zbmId         String?        // for TDRs: their ZBM's user id
+  territory     String?        // TDR's area/district name
+
+  salesActivity     SalesActivity[]    @relation("TDRActivity")
+  salesActivityLogs SalesActivityLog[] @relation("TDRActivityLog")
+  targetsSet        SalesTarget[]      @relation("HSDTargets")
 }
 
 model Province {
@@ -222,7 +233,80 @@ enum UserRole {
   buyer
   dealer
   admin
+  tdr
+  zbm
+  hsd
 }
+
+// ── Sales Performance Models ─────────────────────────────────────────────────
+
+model Zone {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  province String  @unique
+
+  zbm      User?   @relation("ZBMZone", fields: [zbmId], references: [id])
+  zbmId    String? @unique
+  tdrs     User[]  @relation("TDRZone")
+
+  targets    SalesTarget[]
+  activities SalesActivity[]
+  createdAt  DateTime @default(now())
+}
+
+model SalesTarget {
+  id                  String   @id @default(cuid())
+  zone                Zone     @relation(fields: [zoneId], references: [id])
+  zoneId              String
+  setBy               User     @relation("HSDTargets", fields: [setById], references: [id])
+  setById             String
+  period              String   // "2026-04" format
+  targetRevenue       Float
+  targetListings      Int
+  targetNewFarmers    Int
+  targetTransactions  Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([zoneId, period])
+}
+
+model SalesActivity {
+  id          String   @id @default(cuid())
+  tdr         User     @relation("TDRActivity", fields: [tdrId], references: [id])
+  tdrId       String
+  zone        Zone     @relation(fields: [zoneId], references: [id])
+  zoneId      String
+  period      String
+  // Actuals (updated as TDR logs activity)
+  revenue         Float   @default(0)
+  listings        Int     @default(0)
+  newFarmers      Int     @default(0)
+  transactions    Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tdrId, period])
+}
+
+model SalesActivityLog {
+  id          String   @id @default(cuid())
+  tdr         User     @relation("TDRActivityLog", fields: [tdrId], references: [id])
+  tdrId       String
+  type        SalesActivityType
+  amount      Float    @default(0)
+  description String?
+  recordedAt  DateTime @default(now())
+}
+
+enum SalesActivityType {
+  listing_posted
+  farmer_onboarded
+  transaction_completed
+  revenue_recorded
+}
+
+// Add to User model via separate migration file
 
 enum SubscriptionTier {
   free

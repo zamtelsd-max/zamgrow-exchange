@@ -3,7 +3,7 @@ import prisma from '../prisma'
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth'
 
 const router = Router()
-router.use(authenticate, requireRole('admin'))
+router.use(authenticate, requireRole(['admin', 'hsd']))
 
 router.get('/stats', async (_req: AuthRequest, res: Response) => {
   try {

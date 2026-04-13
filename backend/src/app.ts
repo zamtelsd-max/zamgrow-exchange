@@ -15,6 +15,7 @@ import usersRoutes from './routes/users'
 import adminRoutes from './routes/admin'
 import notificationsRoutes from './routes/notifications'
 import paymentsRoutes from './routes/payments'
+import salesRoutes from './routes/sales'
 
 const app = express()
 const httpServer = createServer(app)
@@ -43,6 +44,7 @@ app.use('/api/v1/users', usersRoutes)
 app.use('/api/v1/admin', adminRoutes)
 app.use('/api/v1/notifications', notificationsRoutes)
 app.use('/api/v1', paymentsRoutes)
+app.use('/api/v1/sales', salesRoutes)
 
 // Socket events
 io.on('connection', (socket) => {

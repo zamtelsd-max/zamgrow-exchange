@@ -4,7 +4,7 @@
  * Set VITE_API_URL in .env.production to your Railway backend URL.
  */
 
-const BASE = import.meta.env.VITE_API_URL || 'https://zamgrow-api.up.railway.app/api/v1'
+const BASE = import.meta.env.VITE_API_URL || 'https://backend-production-5584.up.railway.app/api/v1'
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 export const getToken = () => localStorage.getItem('zamgrow_token')

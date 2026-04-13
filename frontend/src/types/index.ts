@@ -2,7 +2,104 @@
 // Core Types for Zamgrow Exchange
 // ============================================================
 
-export type UserRole = 'BUYER' | 'SELLER' | 'BOTH' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole = 'BUYER' | 'SELLER' | 'BOTH' | 'ADMIN' | 'SUPER_ADMIN' | 'TDR' | 'ZBM' | 'HSD';
+
+// ---- Sales Performance Types ----
+export type ZoneName =
+  | 'Lusaka Zone' | 'Copperbelt Zone' | 'Northern Zone'
+  | 'Eastern Zone' | 'Southern Zone' | 'Western Zone'
+  | 'Luapula Zone' | 'Muchinga Zone' | 'North-Western Zone' | 'Central Zone'
+
+export interface SalesTarget {
+  id: string
+  zoneId: string
+  zoneName: ZoneName
+  setByHsdId: string
+  setByHsdName: string
+  period: string // e.g. "2026-04"
+  targetRevenue: number       // ZMW
+  targetListings: number
+  targetNewFarmers: number
+  targetTransactions: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TDRPerformance {
+  tdrId: string
+  tdrName: string
+  tdrPhone: string
+  zoneId: string
+  zoneName: ZoneName
+  zbmId: string
+  period: string
+  // Actuals
+  actualRevenue: number
+  actualListings: number
+  actualNewFarmers: number
+  actualTransactions: number
+  // Derived (calculated from zone target / number of TDRs in zone)
+  assignedTargetRevenue: number
+  assignedTargetListings: number
+  assignedTargetNewFarmers: number
+  assignedTargetTransactions: number
+  // Scores
+  revenueAchievementPct: number
+  listingsAchievementPct: number
+  overallScore: number
+  rank: number
+  trend: 'UP' | 'DOWN' | 'STABLE'
+  lastActivity: string
+}
+
+export interface ZonePerformance {
+  zoneId: string
+  zoneName: ZoneName
+  zbmId: string
+  zbmName: string
+  zbmPhone: string
+  period: string
+  tdrCount: number
+  // Zone target (set by HSD)
+  targetRevenue: number
+  targetListings: number
+  targetNewFarmers: number
+  targetTransactions: number
+  // Actuals (sum of all TDRs)
+  actualRevenue: number
+  actualListings: number
+  actualNewFarmers: number
+  actualTransactions: number
+  // Achievement
+  revenueAchievementPct: number
+  overallScore: number
+  rank: number
+  tdrs: TDRPerformance[]
+}
+
+export interface ZBMProfile {
+  id: string
+  name: string
+  phone: string
+  email: string
+  zoneId: string
+  zoneName: ZoneName
+  provinces: string[]
+  tdrCount: number
+  joinedAt: string
+}
+
+export interface TDRProfile {
+  id: string
+  name: string
+  phone: string
+  email: string
+  zoneId: string
+  zoneName: ZoneName
+  zbmId: string
+  territory: string   // district/area name
+  joinedAt: string
+}
 export type ListingType = 'BUY' | 'SELL';
 export type ListingStatus = 'ACTIVE' | 'SOLD' | 'EXPIRED' | 'PENDING';
 export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COUNTERED';
@@ -52,6 +149,11 @@ export interface User {
   completedTransactions?: number;
   subscription?: Subscription;
   createdAt: string;
+  // Sales-specific optional fields
+  zoneId?: string;
+  zoneName?: string;
+  zbmId?: string;
+  territory?: string;
 }
 
 export interface Listing {

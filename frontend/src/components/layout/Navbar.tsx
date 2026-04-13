@@ -20,6 +20,7 @@ export default function Navbar() {
   const navLinks = [
     { label: 'Browse', href: '/browse', icon: ShoppingBag },
     { label: 'Market Prices', href: '/market', icon: BarChart2 },
+    { label: 'Sales', href: '/sales', icon: BarChart2 },
   ]
 
   const isActive = (path: string) => location.pathname === path
@@ -161,6 +162,8 @@ export default function Navbar() {
                         { icon: ShoppingBag, label: 'Dashboard', href: '/dashboard' },
                         { icon: Heart, label: 'Watchlist', href: '/watchlist' },
                         ...(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' ? [{ icon: Shield, label: 'Admin Panel', href: '/admin' }] : []),
+                        ...(['TDR','ZBM','HSD'].includes(user.role) ? [{ icon: BarChart2, label: 'Sales Dashboard', href: '/sales' }] : []),
+                        { icon: BarChart2, label: 'Sales Portal', href: '/sales' },
                         { icon: Settings, label: 'Settings', href: '/profile' },
                       ].map(item => (
                         <Link

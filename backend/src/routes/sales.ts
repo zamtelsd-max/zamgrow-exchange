@@ -113,9 +113,9 @@ router.get('/zones', authenticate, requireRole(['hsd']), async (_req: Request, r
         zbmId: zone.zbmId,
         zbmName: zone.zbm?.name ?? '—',
         zbmPhone: zone.zbm?.phone ?? '—',
-        tdrCount: zone._count.tdrs,
         period,
         ...stats,
+        tdrCount: zone._count.tdrs,
         rank: idx + 1, // will re-sort below
       }
     }))

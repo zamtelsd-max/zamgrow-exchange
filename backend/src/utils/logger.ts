@@ -1,22 +1,17 @@
-import winston from 'winston'
+const isDev = process.env.NODE_ENV !== 'production'
 
-export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    process.env.NODE_ENV === 'production'
-      ? winston.format.json()
-      : winston.format.combine(
-          winston.format.colorize(),
-          winston.format.printf(({ level, message, timestamp }) => {
-            return `${timestamp} [${level}]: ${message}`
-          })
-        )
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-  ],
-})
+export const logger = {
+  info: (msg: string, ...args: unknown[]) => {
+    if (isDev) console.log(`[INFO] ${msg}`, ...args)
+    else console.log(JSON.stringify({ level: 'info', message: msg, ts: new Date().toISOString() }))
+  },
+  debug: (msg: string, ...args: unknown[]) => {
+    if (isDev) console.log(`[DEBUG] ${msg}`, ...args)
+  },
+  warn: (msg: string, ...args: unknown[]) => {
+    console.warn(`[WARN] ${msg}`, ...args)
+  },
+  error: (msg: string, ...args: unknown[]) => {
+    console.error(`[ERROR] ${msg}`, ...args)
+  },
+}

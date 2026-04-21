@@ -70,10 +70,15 @@ function detectProvider(phone: string): MobileMoneyProvider {
   const digits = phone.replace(/\D/g, '')
   const local = digits.startsWith('260') ? digits.slice(3) : digits.startsWith('0') ? digits.slice(1) : digits
   const prefix3 = local.slice(0, 3)
-  if (['095', '096'].includes(prefix3)) return 'zamtel'
+  // Zambia network prefixes (2025):
+  // Zamtel: 095, 096 (some 096 shared with MTN)
+  // Airtel: 097, 077
+  // MTN: 076, 078, 096 (some)
+  if (['095'].includes(prefix3)) return 'zamtel'
   if (['097', '077'].includes(prefix3)) return 'airtel'
-  if (['076'].includes(prefix3)) return 'mtn'
-  return 'mtn' // default
+  if (['076', '078'].includes(prefix3)) return 'mtn'
+  if (prefix3 === '096') return 'zamtel' // default 096 to Zamtel
+  return 'airtel' // fallback
 }
 
 // ─── GET /api/v1/payments/providers ──────────────────────────────────────────

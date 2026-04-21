@@ -209,7 +209,10 @@ router.post('/payments/subscriptions', authenticate, async (req: AuthRequest, re
     }
 
     // For sandbox / immediate completion — update subscription right away
-    if (process.env.NODE_ENV !== 'production' || process.env.PAYMENT_SANDBOX === 'true') {
+    // Sandbox when: explicit flag OR no real API keys configured
+    const isPaymentSandbox = process.env.PAYMENT_SANDBOX === 'true' ||
+      (process.env.PAYMENT_SANDBOX !== 'false' && !process.env.ZAMTEL_MONEY_API_KEY && !process.env.AIRTEL_CLIENT_ID && !process.env.MTN_SUBSCRIPTION_KEY)
+    if (isPaymentSandbox) {
       const endDate = new Date()
       endDate.setMonth(endDate.getMonth() + 1)
       await prisma.$transaction([

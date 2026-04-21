@@ -57,8 +57,14 @@ function normalizePhone(phone: string): string {
 }
 
 function isSandbox(): boolean {
-  return process.env.NODE_ENV !== 'production' ||
-    process.env.PAYMENT_SANDBOX === 'true'
+  // Sandbox if explicitly set, OR if real provider credentials are not configured
+  if (process.env.PAYMENT_SANDBOX === 'true') return true
+  if (process.env.PAYMENT_SANDBOX === 'false') return false
+  // Auto-detect: if no real API keys, use sandbox
+  const hasZamtelKey = !!process.env.ZAMTEL_MONEY_API_KEY
+  const hasAirtelKey = !!process.env.AIRTEL_CLIENT_ID
+  const hasMtnKey = !!process.env.MTN_SUBSCRIPTION_KEY
+  return !(hasZamtelKey || hasAirtelKey || hasMtnKey)
 }
 
 // ─── Zamtel Money ─────────────────────────────────────────────────────────────

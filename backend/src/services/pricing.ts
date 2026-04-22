@@ -54,38 +54,51 @@ export interface PriceSummary {
 
 // ─── Commodity mapping — WFP name → our IDs ──────────────────────────────────
 
+// kgFactor = multiply raw price by this to get price per KG
+// e.g. if WFP unit is "400 G" and price is K10, then pricePerKg = K10 * (1/0.4) = K25/kg
 const COMMODITY_MAP: Record<string, { id: string; name: string; emoji: string; category: string; kgFactor: number }> = {
-  'Maize (white)':                 { id: 'maize',       name: 'Maize',              emoji: '🌽', category: 'Cereals',    kgFactor: 1 },
-  'Maize meal':                    { id: 'maize-meal',  name: 'Maize Meal',         emoji: '🌾', category: 'Cereals',    kgFactor: 0.4 },        // 400g pack
-  'Maize meal (white, breakfast)': { id: 'maize-breakfast', name: 'Breakfast Meal', emoji: '🌾', category: 'Cereals',    kgFactor: 0.04 },       // per 25kg
-  'Maize meal (white, roller)':    { id: 'maize-roller',name: 'Roller Meal',        emoji: '🌾', category: 'Cereals',    kgFactor: 0.04 },
-  'Rice':                          { id: 'rice',        name: 'Rice',               emoji: '🍚', category: 'Cereals',    kgFactor: 1 },
-  'Rice (local)':                  { id: 'rice-local',  name: 'Local Rice',         emoji: '🍚', category: 'Cereals',    kgFactor: 1 },
-  'Sorghum':                       { id: 'sorghum',     name: 'Sorghum',            emoji: '🌾', category: 'Cereals',    kgFactor: 1 },
-  'Millet':                        { id: 'millet',      name: 'Millet',             emoji: '🌾', category: 'Cereals',    kgFactor: 1 },
-  'Beans':                         { id: 'beans',       name: 'Beans',              emoji: '🫘', category: 'Pulses',     kgFactor: 1 },
-  'Beans (dry)':                   { id: 'beans-dry',   name: 'Dry Beans',          emoji: '🫘', category: 'Pulses',     kgFactor: 1 },
-  'Groundnuts (shelled)':          { id: 'groundnuts',  name: 'Groundnuts',         emoji: '🥜', category: 'Pulses',     kgFactor: 1 },
-  'Soy Chunks':                    { id: 'soy',         name: 'Soy Chunks',         emoji: '🫘', category: 'Pulses',     kgFactor: 0.09 },       // per 90g
-  'Cassava meal':                  { id: 'cassava',     name: 'Cassava',            emoji: '🍠', category: 'Tubers',     kgFactor: 1 },
-  'Sweet potatoes':                { id: 'sweet-potato',name: 'Sweet Potatoes',     emoji: '🍠', category: 'Vegetables', kgFactor: 1 },
-  'Tomatoes':                      { id: 'tomatoes',    name: 'Tomatoes',           emoji: '🍅', category: 'Vegetables', kgFactor: 1 },
-  'Rape leaves':                   { id: 'rape',        name: 'Rape/Greens',        emoji: '🥬', category: 'Vegetables', kgFactor: 1 },
-  'Bananas':                       { id: 'bananas',     name: 'Bananas',            emoji: '🍌', category: 'Fruit',      kgFactor: 1 },
-  'Onions':                        { id: 'onions',      name: 'Onions',             emoji: '🧅', category: 'Vegetables', kgFactor: 1 },
-  'Fish (kapenta)':                { id: 'kapenta',     name: 'Kapenta',            emoji: '🐟', category: 'Protein',    kgFactor: 0.09 },       // per 90g
-  'Fish (dry, bream)':             { id: 'bream-dry',   name: 'Dry Bream',          emoji: '🐟', category: 'Protein',    kgFactor: 1 },
-  'Fish (dry)':                    { id: 'fish-dry',    name: 'Dried Fish',         emoji: '🐟', category: 'Protein',    kgFactor: 1 },
-  'Fish (fresh)':                  { id: 'fish-fresh',  name: 'Fresh Fish',         emoji: '🐠', category: 'Protein',    kgFactor: 1 },
-  'Meat (mixed, cut)':             { id: 'meat',        name: 'Meat',               emoji: '🥩', category: 'Protein',    kgFactor: 1 },
-  'Eggs':                          { id: 'eggs',        name: 'Eggs',               emoji: '🥚', category: 'Protein',    kgFactor: 0.033 },      // per 30 pcs; ~33 per kg
-  'Milk (fresh)':                  { id: 'milk',        name: 'Fresh Milk',         emoji: '🥛', category: 'Dairy',      kgFactor: 2 },          // per 500ml → per litre
-  'Sugar':                         { id: 'sugar',       name: 'Sugar',              emoji: '🍬', category: 'Other',      kgFactor: 1 },
-  'Salt':                          { id: 'salt',        name: 'Salt',               emoji: '🧂', category: 'Other',      kgFactor: 1 },
-  'Oil (cooking, imported)':       { id: 'oil-import',  name: 'Cooking Oil (Imp.)', emoji: '🫙', category: 'Other',      kgFactor: 1/0.75 },     // per 750ml bottle
-  'Oil (cooking, local)':          { id: 'oil-local',   name: 'Cooking Oil (Local)',emoji: '🫙', category: 'Other',      kgFactor: 1/2.5 },      // per 2.5L
-  'Fuel (petrol-gasoline)':        { id: 'fuel-petrol', name: 'Petrol',             emoji: '⛽', category: 'Fuel',       kgFactor: 1 },
-  'Fuel (diesel)':                 { id: 'fuel-diesel', name: 'Diesel',             emoji: '⛽', category: 'Fuel',       kgFactor: 1 },
+  // WFP unit: "Tin (20 L)" — a 20L tin of maize ≈ 12.5kg (maize density ~0.625 kg/L)
+  'Maize (white)':                 { id: 'maize',            name: 'Maize',              emoji: '🌽', category: 'Cereals',    kgFactor: 1/12.5 },
+  // WFP unit: "400 G"
+  'Maize meal':                    { id: 'maize-meal',       name: 'Maize Meal',         emoji: '🌾', category: 'Cereals',    kgFactor: 1/0.4 },
+  // WFP unit: "25 KG"
+  'Maize meal (white, breakfast)': { id: 'maize-breakfast',  name: 'Breakfast Meal',     emoji: '🌾', category: 'Cereals',    kgFactor: 1/25 },
+  'Maize meal (white, roller)':    { id: 'maize-roller',     name: 'Roller Meal',        emoji: '🌾', category: 'Cereals',    kgFactor: 1/25 },
+  // WFP unit: "KG"
+  'Rice':                          { id: 'rice',             name: 'Rice',               emoji: '🍚', category: 'Cereals',    kgFactor: 1 },
+  'Rice (local)':                  { id: 'rice-local',       name: 'Local Rice',         emoji: '🍚', category: 'Cereals',    kgFactor: 1 },
+  'Sorghum':                       { id: 'sorghum',          name: 'Sorghum',            emoji: '🌾', category: 'Cereals',    kgFactor: 1 },
+  'Millet':                        { id: 'millet',           name: 'Millet',             emoji: '🌾', category: 'Cereals',    kgFactor: 1 },
+  'Beans':                         { id: 'beans',            name: 'Beans',              emoji: '🫘', category: 'Pulses',     kgFactor: 1 },
+  'Beans (dry)':                   { id: 'beans-dry',        name: 'Dry Beans',          emoji: '🫘', category: 'Pulses',     kgFactor: 1 },
+  'Groundnuts (shelled)':          { id: 'groundnuts',       name: 'Groundnuts',         emoji: '🥜', category: 'Pulses',     kgFactor: 1 },
+  // WFP unit: "90 G"
+  'Soy Chunks':                    { id: 'soy',              name: 'Soy Chunks',         emoji: '🫘', category: 'Pulses',     kgFactor: 1/0.09 },
+  'Cassava meal':                  { id: 'cassava',          name: 'Cassava',            emoji: '🍠', category: 'Tubers',     kgFactor: 1 },
+  'Sweet potatoes':                { id: 'sweet-potato',     name: 'Sweet Potatoes',     emoji: '🍠', category: 'Vegetables', kgFactor: 1 },
+  'Tomatoes':                      { id: 'tomatoes',         name: 'Tomatoes',           emoji: '🍅', category: 'Vegetables', kgFactor: 1 },
+  'Rape leaves':                   { id: 'rape',             name: 'Rape/Greens',        emoji: '🥬', category: 'Vegetables', kgFactor: 1 },
+  'Bananas':                       { id: 'bananas',          name: 'Bananas',            emoji: '🍌', category: 'Fruit',      kgFactor: 1 },
+  'Onions':                        { id: 'onions',           name: 'Onions',             emoji: '🧅', category: 'Vegetables', kgFactor: 1 },
+  // WFP unit: "90 G" — kapenta sold in 90g packs
+  'Fish (kapenta)':                { id: 'kapenta',          name: 'Kapenta',            emoji: '🐟', category: 'Protein',    kgFactor: 1/0.09 },
+  'Fish (dry, bream)':             { id: 'bream-dry',        name: 'Dry Bream',          emoji: '🐟', category: 'Protein',    kgFactor: 1 },
+  // WFP unit: "Bundle" — a bundle ≈ 0.5kg average
+  'Fish (dry)':                    { id: 'fish-dry',         name: 'Dried Fish',         emoji: '🐟', category: 'Protein',    kgFactor: 1/0.5 },
+  'Fish (fresh)':                  { id: 'fish-fresh',       name: 'Fresh Fish',         emoji: '🐠', category: 'Protein',    kgFactor: 1 },
+  'Meat (mixed, cut)':             { id: 'meat',             name: 'Meat',               emoji: '🥩', category: 'Protein',    kgFactor: 1 },
+  // WFP unit: "30 pcs" — 30 eggs ≈ 1.8kg
+  'Eggs':                          { id: 'eggs',             name: 'Eggs',               emoji: '🥚', category: 'Protein',    kgFactor: 1/1.8 },
+  // WFP unit: "500 ML" — milk density ~1 kg/L → 0.5kg per 500ml
+  'Milk (fresh)':                  { id: 'milk',             name: 'Fresh Milk',         emoji: '🥛', category: 'Dairy',      kgFactor: 1/0.5 },
+  'Sugar':                         { id: 'sugar',            name: 'Sugar',              emoji: '🍬', category: 'Other',      kgFactor: 1 },
+  'Salt':                          { id: 'salt',             name: 'Salt',               emoji: '🧂', category: 'Other',      kgFactor: 1 },
+  // WFP unit: "750 ML" — oil density ~0.92 kg/L → 0.69kg per 750ml
+  'Oil (cooking, imported)':       { id: 'oil-import',       name: 'Cooking Oil',        emoji: '🫙', category: 'Other',      kgFactor: 1/0.69 },
+  // WFP unit: "750 ML" or "2.5 L" — handle both via unit column in code
+  'Oil (cooking, local)':          { id: 'oil-local',        name: 'Local Cooking Oil',  emoji: '🫙', category: 'Other',      kgFactor: 1/0.69 },
+  'Fuel (petrol-gasoline)':        { id: 'fuel-petrol',      name: 'Petrol',             emoji: '⛽', category: 'Fuel',       kgFactor: 1 },
+  'Fuel (diesel)':                 { id: 'fuel-diesel',      name: 'Diesel',             emoji: '⛽', category: 'Fuel',       kgFactor: 1 },
 }
 
 // ─── In-memory cache ──────────────────────────────────────────────────────────
@@ -201,8 +214,12 @@ async function fetchWfpData(usdRate: number): Promise<LivePrice[]> {
     if (!meta) continue
     const rawPrice = parseFloat(row.price)
     if (isNaN(rawPrice) || rawPrice <= 0) continue
+    // Dynamic unit override for oils sold in 2.5L bottles
+    let kgFactor = meta.kgFactor
+    if (row.unit === '2.5 L') kgFactor = 1 / (2.5 * 0.92)   // 2.5L oil at 0.92kg/L
+    if (row.unit === '5 L')   kgFactor = 1 / (5 * 0.92)
     // Normalise to per-kg
-    const pricePerKg = rawPrice * meta.kgFactor
+    const pricePerKg = rawPrice * kgFactor
     const price50kg = Math.round(pricePerKg * 50)
     const { trend, changePercent } = calcTrend(trendMap.get(key) || [])
 

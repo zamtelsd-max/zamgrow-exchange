@@ -234,9 +234,7 @@ enum UserRole {
   buyer
   dealer
   admin
-  tdr
-  zbm
-  hsd
+  super_admin
 }
 
 // ── Sales Performance Models ─────────────────────────────────────────────────

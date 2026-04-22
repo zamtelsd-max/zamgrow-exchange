@@ -29,7 +29,7 @@ export default function AdminPage() {
   const { user } = useSelector((s: RootState) => s.auth)
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'reports'>('overview')
 
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
+  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -159,7 +159,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {MOCK_USERS.filter(u => u.role !== 'ADMIN').map(u => (
+                {MOCK_USERS.filter(u => u.role !== 'admin').map(u => (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">

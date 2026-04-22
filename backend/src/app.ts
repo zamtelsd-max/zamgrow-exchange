@@ -15,7 +15,6 @@ import usersRoutes from './routes/users'
 import adminRoutes from './routes/admin'
 import notificationsRoutes from './routes/notifications'
 import paymentsRoutes from './routes/payments'
-import salesRoutes from './routes/sales'
 import pricingRoutes from './routes/pricing'
 
 const app = express()
@@ -65,7 +64,6 @@ app.use('/api/v1/users', usersRoutes)
 app.use('/api/v1/admin', adminRoutes)
 app.use('/api/v1/notifications', notificationsRoutes)
 app.use('/api/v1', paymentsRoutes)
-app.use('/api/v1/sales', salesRoutes)
 app.use('/api/v1/pricing', pricingRoutes)
 
 // Socket events

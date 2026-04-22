@@ -13,7 +13,6 @@ import SubscribePage from './pages/SubscribePage'
 import AdminPage from './pages/AdminPage'
 import WatchlistPage from './pages/WatchlistPage'
 import PaymentPage from './pages/PaymentPage'
-import SalesDashboard from './pages/sales/SalesDashboard'
 import AuthModal from './components/ui/AuthModal'
 import SubscribeModal from './components/ui/SubscribeModal'
 
@@ -34,7 +33,6 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/sales" element={<SalesDashboard />} />
         </Routes>
       </Layout>
       {isAuthModalOpen && <AuthModal />}

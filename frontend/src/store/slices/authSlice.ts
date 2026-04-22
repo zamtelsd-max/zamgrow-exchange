@@ -14,7 +14,7 @@ const DEMO_USER: User = {
   name: 'John Nkhoma',
   phone: '+260971234567',
   email: 'john@zamgrow.co.zm',
-  role: 'BOTH',
+  role: 'farmer',
   creditsBalance: 10,
   isVerified: true,
   rating: 4.7,

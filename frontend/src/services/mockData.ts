@@ -37,11 +37,11 @@ export const UNITS = ['50kg Bag', '90kg Bag', 'Tonne (MT)', 'Kg', 'Litre', 'Head
 // Mock Users
 // ============================================================
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Joseph Mwale', phone: '+260971234567', email: 'joseph@example.com', role: 'SELLER', province: PROVINCES[2], district: PROVINCES[2].districts[0], creditsBalance: 8, isVerified: true, rating: 4.8, reviewCount: 23, completedTransactions: 31, createdAt: '2024-01-15T10:00:00Z' },
-  { id: 'u2', name: 'Grace Banda', phone: '+260961234567', email: 'grace@example.com', role: 'BUYER', province: PROVINCES[4], district: PROVINCES[4].districts[0], creditsBalance: 10, isVerified: true, rating: 4.5, reviewCount: 12, completedTransactions: 15, createdAt: '2024-02-10T10:00:00Z' },
-  { id: 'u3', name: 'Emmanuel Phiri', phone: '+260951234567', role: 'BOTH', province: PROVINCES[0], district: PROVINCES[0].districts[0], creditsBalance: 5, isVerified: false, rating: 4.2, reviewCount: 7, completedTransactions: 9, createdAt: '2024-03-01T10:00:00Z' },
-  { id: 'u4', name: 'Charity Tembo', phone: '+260941234567', role: 'SELLER', province: PROVINCES[8], district: PROVINCES[8].districts[1], creditsBalance: 0, isVerified: true, rating: 4.9, reviewCount: 45, completedTransactions: 52, createdAt: '2023-11-05T10:00:00Z' },
-  { id: 'admin1', name: 'Admin User', phone: '+260911111111', email: 'admin@zamgrow.co.zm', role: 'ADMIN', creditsBalance: 999, isVerified: true, createdAt: '2023-10-01T10:00:00Z' },
+  { id: 'u1', name: 'Joseph Mwale', phone: '+260971234567', email: 'joseph@example.com', role: 'farmer', province: PROVINCES[2], district: PROVINCES[2].districts[0], creditsBalance: 8, isVerified: true, rating: 4.8, reviewCount: 23, completedTransactions: 31, createdAt: '2024-01-15T10:00:00Z' },
+  { id: 'u2', name: 'Grace Banda', phone: '+260961234567', email: 'grace@example.com', role: 'buyer', province: PROVINCES[4], district: PROVINCES[4].districts[0], creditsBalance: 10, isVerified: true, rating: 4.5, reviewCount: 12, completedTransactions: 15, createdAt: '2024-02-10T10:00:00Z' },
+  { id: 'u3', name: 'Emmanuel Phiri', phone: '+260951234567', role: 'dealer', province: PROVINCES[0], district: PROVINCES[0].districts[0], creditsBalance: 5, isVerified: false, rating: 4.2, reviewCount: 7, completedTransactions: 9, createdAt: '2024-03-01T10:00:00Z' },
+  { id: 'u4', name: 'Charity Tembo', phone: '+260941234567', role: 'farmer', province: PROVINCES[8], district: PROVINCES[8].districts[1], creditsBalance: 0, isVerified: true, rating: 4.9, reviewCount: 45, completedTransactions: 52, createdAt: '2023-11-05T10:00:00Z' },
+  { id: 'admin1', name: 'Admin User', phone: '+260911111111', email: 'admin@zamgrow.co.zm', role: 'admin', creditsBalance: 999, isVerified: true, createdAt: '2023-10-01T10:00:00Z' },
 ]
 
 // ============================================================

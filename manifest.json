@@ -1,0 +1,16 @@
+{
+  "name": "Zamgrow Exchange",
+  "short_name": "Zamgrow",
+  "description": "Zambia's #1 intelligent agricultural marketplace",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

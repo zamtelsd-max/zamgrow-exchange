@@ -118,7 +118,12 @@ export default function AuthModal() {
         setForm(f => ({ ...f, phone }))
         setStep('otp')
         dispatch(loginFailure(''))
-        toast.success('OTP sent to ' + phone)
+        if (data.devOtp) {
+          // SMS not configured — show OTP directly on screen
+          toast(`📋 OTP (SMS unavailable): ${data.devOtp}`, { duration: 30000, icon: '🔑' })
+        } else {
+          toast.success('OTP sent to ' + phone)
+        }
       }
     } catch (e: any) {
       dispatch(loginFailure(e.message))

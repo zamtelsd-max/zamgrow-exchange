@@ -50,7 +50,13 @@ router.post('/otp/send', otpLimiter, async (req: Request, res: Response) => {
       data: { phone, code: otp, expiresAt, userId: user?.id }
     })
     await sendOtpSms(phone, otp)
-    res.json({ success: true, message: `OTP sent to ${phone}` })
+    const hasAt = !!(process.env.AT_API_KEY && process.env.AT_USERNAME)
+    res.json({
+      success: true,
+      message: `OTP sent to ${phone}`,
+      // Return OTP in response when AT SMS is not configured (dev/staging fallback)
+      ...(hasAt ? {} : { devOtp: otp, note: 'SMS not configured — use this code directly' })
+    })
   } catch {
     res.status(500).json({ error: 'Failed to send OTP' })
   }
